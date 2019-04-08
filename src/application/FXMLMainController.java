@@ -1,19 +1,11 @@
 package application;
 
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Paths;
-import java.util.ResourceBundle;
-
 import application.apks.APKsTabController;
 import application.applications.ApplicationsTabController;
-import application.model.ModelListener;
+import application.log.Logger;
+import application.log.Logger.LoggerListener;
 import application.preferences.Preferences;
-import application.screencapture.ScreenCaptureController;
 import application.startupcheck.StartupCheckController;
-import com.sun.prism.PresentableState;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -22,15 +14,20 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
-import javafx.scene.control.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.paint.Color;
-import application.log.Logger;
-import application.log.Logger.LoggerListener;
 import javafx.stage.Stage;
 
-public class FXMLMainController implements Initializable {
+import java.awt.*;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
+
+public class FXMLMainController implements WindowController, Initializable {
 
     public static final int TAB_INDEX_APPLICATIONS = 1;
 

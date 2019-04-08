@@ -2,22 +2,20 @@ package application;
 
 import application.log.Logger;
 import application.preferences.Preferences;
+import application.services.DeviceMonitorService;
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import application.services.DeviceMonitorService;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 
-import javax.swing.*;
 import java.io.File;
 import java.io.PrintStream;
-import java.net.URL;
 
 public class Main extends Application {
 
@@ -40,7 +38,8 @@ public class Main extends Application {
 
 		hostService = getHostServices();
 
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLMain.fxml"));
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("ui/simple/FXMLMain.fxml"));
+		//FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLMain.fxml"));
 
 		Parent root = loader.load();
 		Scene scene = new Scene(root, 1200, 620);
@@ -56,11 +55,10 @@ public class Main extends Application {
 			// Won't work on Windows or Linux.
 		}
 
-
 		primaryStage.setTitle("ADB GUI Tool");
 		primaryStage.setScene(scene);
 
-		FXMLMainController controller = (FXMLMainController)loader.getController();
+		WindowController controller = loader.getController();
 		controller.setStageAndSetupListeners(primaryStage); // or what you want to do
 
 		//primaryStage.setResizable(false);
