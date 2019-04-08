@@ -1,19 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.text.Font?>
 <BorderPane prefHeight="550.0" prefWidth="800.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.FXMLMainController">
     <right>
         <StackPane>
-            <fx:include source="devices/DevicesLayout.fxml" />
+            <fx:include fx:id="devices" source="devices/DevicesLayout.fxml" />
         </StackPane>
 
     </right>
     <center>
-        <fx:include source="../../logexceptions/LogExceptionsLayout.fxml" />
+        <fx:include source="logcat/LogcatLayout.fxml" />
     </center>
-   <bottom>
-      <Pane prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
-   </bottom>
+    <bottom>
+        <AnchorPane prefWidth="200.0" BorderPane.alignment="CENTER">
+            <children>
+                <Label fx:id="appLogText" layoutX="14.0" layoutY="12.0" text="[Application Log]" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="16.0" AnchorPane.rightAnchor="16.0" AnchorPane.topAnchor="8.0">
+               <font>
+                  <Font size="14.0" />
+               </font></Label>
+            </children>
+        </AnchorPane>
+    </bottom>
 </BorderPane>

@@ -10,34 +10,48 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 <StackPane xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.devices.DevicesController">
     <!-- TODO Add Nodes -->
 
-    <VBox maxHeight="1.7976931348623157E308" maxWidth="200" spacing="5" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+    <VBox maxHeight="1.7976931348623157E308" maxWidth="200" spacing="4.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
 
-        <HBox alignment="CENTER_LEFT" spacing="5">
+        <HBox alignment="CENTER_LEFT" spacing="4.0">
             <Label text="Devices" />
             <Button fx:id="buttonADBToggle" onAction="#handleToggleADBClicked" text="Kill ADB" />
 
         </HBox>
 
-        <ListView fx:id="listDevices" prefWidth="200.0" />
-      <StackPane prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #ffffff;">
+        <ListView fx:id="listDevices" prefHeight="500.0" prefWidth="200.0" />
+      <VBox fx:id="devicePane" prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #ffffff; -fx-background-radius: 4;">
          <children>
-            <ImageView fitHeight="200.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@../../../../res/img_device.png" />
-               </image>
-            </ImageView>
+            <StackPane prefHeight="150.0" prefWidth="200.0">
+               <children>
+                  <ImageView fitHeight="200.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../../../../res/img_device.png" />
+                     </image>
+                  </ImageView>
+                  <StackPane maxHeight="60.0" minHeight="60.0" prefHeight="150.0" style="-fx-background-color: #cccccc88; -fx-background-radius: 4;">
+                     <children>
+                        <Label text="Drag Apk to Install" textAlignment="CENTER" textFill="#1e1e1e" wrapText="true">
+                           <font>
+                              <Font size="22.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </StackPane>
+               </children>
+            </StackPane>
          </children>
          <padding>
             <Insets bottom="16.0" left="16.0" right="16.0" top="16.0" />
          </padding>
-      </StackPane>
+      </VBox>
 
     </VBox>
     <padding>
-        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+        <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
     </padding>
 
 </StackPane>

@@ -1,41 +1,26 @@
 package application.startupcheck;
 
 import application.ADBHelper;
-import application.AdbUtils;
-import application.DateUtil;
-import application.FolderUtil;
 import application.log.Logger;
-import application.model.Model;
 import application.preferences.Preferences;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -60,13 +45,14 @@ public class StartupCheckController implements Initializable {
             public void run() {
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                }
                 boolean adbExists = ADBHelper.isADBFound();
 
                 Logger.d("Is adb found: " + adbExists);
 
-                if (!adbExists){
-                    if (tryToFindADB()){
+                if (!adbExists) {
+                    if (tryToFindADB()) {
                         adbExists = ADBHelper.isADBFound();
 
                         Logger.d("Is adb found after auto search: " + adbExists);
@@ -97,10 +83,10 @@ public class StartupCheckController implements Initializable {
 // /Users/evgeni.shafran/Library/Android/sdk/platform-tools/
         File file = new File("/Users/");
 
-        if (file.exists()){
+        if (file.exists()) {
             for (File userFolder : file.listFiles()) {
                 File adbPath = new File(userFolder, "/Library/Android/sdk/platform-tools/");
-                if (adbPath.exists()){
+                if (adbPath.exists()) {
                     Platform.runLater(new Runnable() {
                         @Override
                         public void run() {
@@ -109,7 +95,8 @@ public class StartupCheckController implements Initializable {
                                 Preferences.getInstance().save();
                             } catch (IOException e) {
                             }
-                        }});
+                        }
+                    });
 
                     Logger.d("Found ADB at: " + adbPath.getAbsolutePath());
 
@@ -127,7 +114,11 @@ public class StartupCheckController implements Initializable {
         this.scene = scene;
     }
 
-    public static void showScreen(Class class1) throws IOException {
+    public static void showScreen(Class class1) throws IOException{
+        showScreen(class1, null);
+    }
+
+    public static void showScreen(Class class1, Stage owner) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(class1.getResource("/application/startupcheck/StartupCheckLayout.fxml"));
 
         Parent root1 = (Parent) fxmlLoader.load();
@@ -139,8 +130,9 @@ public class StartupCheckController implements Initializable {
         stage.setTitle("Startup Check");
         Scene scene = new Scene(root1);
         stage.setScene(scene);
-
-
+        if (owner != null) {
+            stage.initOwner(owner);
+        }
         stage.show();
 
         controller.setStage(stage, scene);
@@ -150,7 +142,8 @@ public class StartupCheckController implements Initializable {
         Preferences.getInstance().setAdbPath(textFieldADBPath.getText());
         try {
             Preferences.getInstance().save();
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
 
         labelStatus.setText("Checking path...");
         new Thread(new Runnable() {

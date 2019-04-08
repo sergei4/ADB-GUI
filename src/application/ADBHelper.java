@@ -85,7 +85,7 @@ public class ADBHelper {
 
     public static String install(String selectedApk) {
 
-        String result = AdbUtils.run("install -r " + selectedApk + "");
+        String result = AdbUtils.run("install -r -t " + selectedApk + "");
         String[] split = result.split("\n");
 
         if (split.length > 0) {

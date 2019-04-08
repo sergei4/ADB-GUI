@@ -1,17 +1,17 @@
 package application.model;
 
+import application.AdbUtils;
+import application.FileUtils;
+import application.log.Logger;
+import application.preferences.Preferences;
+import com.google.gson.Gson;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import application.AdbUtils;
-import application.FileUtils;
-import application.preferences.Preferences;
-import application.log.Logger;
-import com.google.gson.Gson;
 
 public class Model {
 	Device selectedDevice;
@@ -128,7 +128,7 @@ public class Model {
 		availableDevices.clear();
 
 		notifyListeners();
-		ModelListener.notify(null);
+		ModelListener.notify(selectedDeviceListeners);
 	}
 
 	public ArrayList<CommandBatch> getCommandBatches() {

@@ -14,11 +14,17 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
+import javafx.scene.layout.Pane;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
@@ -34,9 +40,18 @@ public class DevicesController implements Initializable {
     @FXML
     private Button buttonADBToggle;
 
+    @FXML
+    private Pane devicePane;
+
     private ObservableList<String> devicesListItems = FXCollections.observableArrayList();
 
     private List<Device> availableDevices;
+
+    private InstallApkListener installApkListener;
+
+    public void setInstallApkListener(InstallApkListener installApkListener) {
+        this.installApkListener = installApkListener;
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -51,9 +66,7 @@ public class DevicesController implements Initializable {
             }
         });
 
-
         Model.instance.addModelListener(new ModelListener() {
-
             @Override
             public void onChangeModelListener() {
                 refreshDevices();
@@ -61,6 +74,49 @@ public class DevicesController implements Initializable {
         });
 
         refreshDevices();
+
+        cfgDragAndDropEvent();
+    }
+
+    private void cfgDragAndDropEvent() {
+        devicePane.setOnDragOver(new EventHandler<DragEvent>() {
+            @Override
+            public void handle(DragEvent event) {
+                if (event.getDragboard().hasFiles()) {
+                    event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+                }
+                event.consume();
+            }
+        });
+
+        devicePane.setOnDragDropped(new EventHandler<DragEvent>() {
+            @Override
+            public void handle(DragEvent event) {
+                Dragboard db = event.getDragboard();
+                boolean success = false;
+                if (db.hasFiles()) {
+                    File file = db.getFiles().get(0);
+                    if (installApkListener != null) {
+                        installApkListener.onStartInstall();
+                    }
+                    new Thread(() -> {
+                        String result = ADBHelper.install(file.getAbsolutePath());
+                        if (result == null) {
+                            if (installApkListener != null) {
+                                installApkListener.onSuccessInstall();
+                            }
+                        } else {
+                            if (installApkListener != null) {
+                                installApkListener.onFailedInstall(result);
+                            }
+                        }
+                    }).start();
+                    success = true;
+                }
+                event.setDropCompleted(success);
+                event.consume();
+            }
+        });
     }
 
     @FXML
@@ -115,7 +171,7 @@ public class DevicesController implements Initializable {
         for (Device device : availableDevices) {
             devicesListItems.add(getDeviceDescription(device));
 
-            if (selectedDevice != null && device.getId().equals(selectedDevice.getId())){
+            if (selectedDevice != null && device.getId().equals(selectedDevice.getId())) {
                 listDevices.getSelectionModel().select(i);
                 setSelected = true;
             }
