@@ -4,7 +4,6 @@ import application.WindowController;
 import application.log.Logger;
 import application.startupcheck.StartupCheckController;
 import application.ui.simple.devices.DevicesController;
-import application.ui.simple.devices.InstallApkListener;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -15,8 +14,6 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class FXMLMainController implements WindowController, Initializable {
     private Stage stage;
@@ -43,31 +40,29 @@ public class FXMLMainController implements WindowController, Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         appLogText.setText("");
 
-        openADBValidator();
-
-        devicesController.setInstallApkListener(new InstallApkListener() {
+        Logger.setShowLogListener(new Logger.LoggerListener() {
             @Override
-            public void onStartInstall() {
-                updApplicationLog(Color.BLUE, "Installing...");
+            public void onNewLogToShow(String message) {
+                log(Color.BLACK, message);
             }
 
             @Override
-            public void onSuccessInstall() {
-                updApplicationLog(Color.GREEN, "Application has been installed successful");
+            public void onNewErrorLogToShow(String message) {
+                log(Color.RED, message);
             }
 
             @Override
-            public void onFailedInstall(String result) {
-                Logger.e(result);
-                Pattern causeRegExpr = Pattern.compile("Failure (.*)");
-                Matcher matcher = causeRegExpr.matcher(result);
-                String cause = "";
-                if(matcher.find()){
-                    cause = matcher.group(1);
-                }
-                updApplicationLog(Color.RED, "Failed installation: " + cause);
+            public void onFinishLogToShow(String message) {
+                log(Color.GREEN, message);
             }
         });
+
+        openADBValidator();
+    }
+
+    protected void log(Color color, String message) {
+        appLogText.setTextFill(color);
+        appLogText.setText(message);
     }
 
     private void openADBValidator() {
@@ -80,13 +75,6 @@ public class FXMLMainController implements WindowController, Initializable {
                     e.printStackTrace();
                 }
             }
-        });
-    }
-
-    private void updApplicationLog(Color color, String text) {
-        Platform.runLater(() -> {
-            appLogText.setTextFill(color);
-            appLogText.setText(text);
         });
     }
 }

@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DevicesController implements Initializable {
 
@@ -46,12 +48,6 @@ public class DevicesController implements Initializable {
     private ObservableList<String> devicesListItems = FXCollections.observableArrayList();
 
     private List<Device> availableDevices;
-
-    private InstallApkListener installApkListener;
-
-    public void setInstallApkListener(InstallApkListener installApkListener) {
-        this.installApkListener = installApkListener;
-    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -96,19 +92,19 @@ public class DevicesController implements Initializable {
                 boolean success = false;
                 if (db.hasFiles()) {
                     File file = db.getFiles().get(0);
-                    if (installApkListener != null) {
-                        installApkListener.onStartInstall();
-                    }
+                    Logger.ds("Installing...");
                     new Thread(() -> {
                         String result = ADBHelper.install(file.getAbsolutePath());
                         if (result == null) {
-                            if (installApkListener != null) {
-                                installApkListener.onSuccessInstall();
-                            }
+                            Logger.fs("Application has been installed successful");
                         } else {
-                            if (installApkListener != null) {
-                                installApkListener.onFailedInstall(result);
+                            Pattern causeRegExpr = Pattern.compile("Failure (.*)");
+                            Matcher matcher = causeRegExpr.matcher(result);
+                            String cause = "";
+                            if(matcher.find()){
+                                cause = matcher.group(1);
                             }
+                            Logger.es("Failed installation: " + cause);
                         }
                     }).start();
                     success = true;

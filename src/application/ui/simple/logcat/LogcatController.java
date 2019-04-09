@@ -3,9 +3,9 @@ package application.ui.simple.logcat;
 import application.AdbUtils;
 import application.DateUtil;
 import application.log.Logger;
-import application.logexceptions.ExceptionLog;
 import application.model.Model;
 import application.model.ModelListener;
+import application.model.PackageProcess;
 import application.preferences.Preferences;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -27,17 +27,26 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by evgeni.shafran on 10/17/16.
  */
 public class LogcatController implements Initializable {
 
-    public static ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
 
     public ListView<String> listViewLog;
     public Button buttonToggle;
@@ -45,9 +54,10 @@ public class LogcatController implements Initializable {
 
     private ObservableList<String> logListItems = FXCollections.observableArrayList();
     private boolean working;
-    private ArrayList<ExceptionLog> exceptions;
-    private volatile boolean exceptionState;
-    private int exceptionIndex;
+
+    private Map<String, PackageProcess> processList = new HashMap<>();
+
+    private final Object modifyProcessMapMarker = new Object();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -68,60 +78,57 @@ public class LogcatController implements Initializable {
         Model.instance.addSelectedDeviceListener(new ModelListener() {
             @Override
             public void onChangeModelListener() {
-                if (working && Model.instance.getSelectedDevice() != null) {
-                    start();
+                if (Objects.nonNull(Model.instance.getSelectedDevice())) {
+                    if (working) {
+                        start();
+                    }
+                } else {
+                    stop();
                 }
             }
         });
+        scheduledExecutorService.schedule(() -> updRunningProcesses(), 100, TimeUnit.MILLISECONDS);
     }
 
     public void onToggleClicked(ActionEvent actionEvent) {
         if (working) {
             stop();
         } else {
-            start();
+            if (Objects.nonNull(Model.instance.getSelectedDevice())) {
+                start();
+            }
         }
     }
 
     private void start() {
-        if (Model.instance.getSelectedDevice() == null) {
-            return;
-        }
 
         toggleButtonsStates(false);
         logListItems.clear();
         working = true;
         buttonToggle.setText("Stop");
 
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                String logcatCommand = AdbUtils.getAdbCommand("logcat");
+        executor.execute(() -> {
+            String logcatCommand = AdbUtils.getAdbCommand("logcat");
 
-                Process process;
-                try {
+            Process process;
+            try {
 
-                    String[] envp = {};
-                    process = Runtime.getRuntime().exec(logcatCommand, envp);
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String[] envp = {};
+                process = Runtime.getRuntime().exec(logcatCommand, envp);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-                    String line = "";
-                    while ((line = reader.readLine()) != null) {
-                        if (!working) {
-                            break;
-                        }
-
-                        if (!exceptionState) {
-                            addLine(line);
-                        }
+                String line = "";
+                while ((line = reader.readLine()) != null) {
+                    if (!working) {
+                        break;
                     }
-
-                    process.destroy();
-
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    addLine(line);
                 }
 
+                process.destroy();
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
     }
@@ -157,9 +164,7 @@ public class LogcatController implements Initializable {
 
     public void onSaveToFileClicked(ActionEvent actionEvent) {
         final List<String> listToSave = new ArrayList<>(logListItems.size());
-        for (String line : logListItems) {
-            listToSave.add(line);
-        }
+        listToSave.addAll(logListItems);
 
         new Thread(new Runnable() {
             @Override
@@ -177,14 +182,30 @@ public class LogcatController implements Initializable {
 
                     writer = new PrintWriter(logFile, "UTF-8");
 
-
-
                     writer.println("Device name: " + Model.instance.getSelectedDevice().getName());
                     writer.println("Model: " + Model.instance.getSelectedDevice().getModel());
                     writer.println("Android version: " + Model.instance.getSelectedDevice().getAndroidVersion());
                     writer.println();
 
+                    Pattern processReg = Pattern.compile("\\s\\s([\\s\\d]+)\\s");
+
                     for (String line : listToSave) {
+
+                        Matcher matcher = processReg.matcher(line);
+                        if (matcher.find()) {
+                            String processUid = matcher.group(1);
+                            String[] split = processUid.split("\\s");
+                            synchronized (modifyProcessMapMarker) {
+                                PackageProcess packageProcess = split.length > 1 ? processList.get(split[0]) : null;
+                                if (Objects.nonNull(packageProcess)) {
+                                    line = line.replace(processUid, processUid + "/" + packageProcess.process);
+                                    Logger.d(line);
+                                    writer.println(line);
+                                } else {
+                                    writer.println(line);
+                                }
+                            }
+                        }
                         writer.println(line);
                     }
 
@@ -194,6 +215,9 @@ public class LogcatController implements Initializable {
                     e.printStackTrace();
                     Logger.es("Error creating log: " + e.getMessage());
                 } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                    Logger.es("Error creating log: " + e.getMessage());
+                } catch (Exception e) {
                     e.printStackTrace();
                     Logger.es("Error creating log: " + e.getMessage());
                 }
@@ -212,7 +236,22 @@ public class LogcatController implements Initializable {
     }
 
     public void toggleButtonsStates(boolean exceptionState) {
-        this.exceptionState = exceptionState;
         buttonClearLogCat.setDisable(exceptionState);
+    }
+
+    private void updRunningProcesses() {
+        synchronized (modifyProcessMapMarker) {
+            String result = AdbUtils.run("shell ps");
+            String[] split = result.split("\n");
+            for (int i = 1; i < split.length; i++) {
+
+                PackageProcess packageProcess = new PackageProcess();
+                String[] process = split[i].split("\\s+");
+                packageProcess.process = process[process.length - 1];
+                packageProcess.PID = process[1];
+
+                processList.put(packageProcess.PID, packageProcess);
+            }
+        }
     }
 }
