@@ -2,6 +2,7 @@ package application.ui.simple.logcat;
 
 import application.AdbUtils;
 import application.DateUtil;
+import application.Main;
 import application.log.Logger;
 import application.model.Model;
 import application.model.ModelListener;
@@ -15,7 +16,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.text.Font;
 
 import java.awt.*;
 import java.io.BufferedReader;
@@ -44,7 +44,9 @@ import java.util.regex.Pattern;
  */
 public class LogcatController implements Initializable {
 
-    private static ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final long INTERVAL_DURATION = 5000;
+
+    private static ExecutorService mainExecutor = Executors.newSingleThreadExecutor();
 
     private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
 
@@ -59,8 +61,11 @@ public class LogcatController implements Initializable {
 
     private final Object modifyProcessMapMarker = new Object();
 
+    private boolean processListUpdate = false;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+
         listViewLog.setItems(logListItems);
         listViewLog.setCellFactory(cell -> new ListCell<String>() {
             @Override
@@ -68,7 +73,7 @@ public class LogcatController implements Initializable {
                 super.updateItem(item, empty);
                 if (item != null) {
                     setText(item);
-                    setFont(Font.font("courier"));
+                    setFont(Main.courierFont13);
                 }
             }
         });
@@ -78,6 +83,12 @@ public class LogcatController implements Initializable {
         Model.instance.addSelectedDeviceListener(new ModelListener() {
             @Override
             public void onChangeModelListener() {
+                new Thread(() -> {
+                    synchronized (modifyProcessMapMarker) {
+                        processList.clear();
+                    }
+                }).start();
+
                 if (Objects.nonNull(Model.instance.getSelectedDevice())) {
                     if (working) {
                         start();
@@ -87,7 +98,7 @@ public class LogcatController implements Initializable {
                 }
             }
         });
-        scheduledExecutorService.schedule(() -> updRunningProcesses(), 100, TimeUnit.MILLISECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(() -> updRunningProcesses(), INTERVAL_DURATION, INTERVAL_DURATION, TimeUnit.MILLISECONDS);
     }
 
     public void onToggleClicked(ActionEvent actionEvent) {
@@ -107,7 +118,7 @@ public class LogcatController implements Initializable {
         working = true;
         buttonToggle.setText("Stop");
 
-        executor.execute(() -> {
+        mainExecutor.execute(() -> {
             String logcatCommand = AdbUtils.getAdbCommand("logcat");
 
             Process process;
@@ -166,61 +177,58 @@ public class LogcatController implements Initializable {
         final List<String> listToSave = new ArrayList<>(logListItems.size());
         listToSave.addAll(logListItems);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                File logcatFolder = Preferences.getInstance().getLogcatFolder();
+        new Thread(() -> {
+            File logcatFolder = Preferences.getInstance().getLogcatFolder();
 
-                PrintWriter writer = null;
-                Logger.ds("Saving log...");
-                try {
-                    File logFile = new File(logcatFolder,
-                            Model.instance.getSelectedDevice().getName() + " " +
-                                    Model.instance.getSelectedDevice().getAndroidVersion() + " " +
-                                    DateUtil.getCurrentTimeStamp() + ".txt");
+            PrintWriter writer = null;
+            Logger.ds("Saving log...");
+            try {
+                File logFile = new File(logcatFolder,
+                        Model.instance.getSelectedDevice().getName() + " " +
+                                Model.instance.getSelectedDevice().getAndroidVersion() + " " +
+                                DateUtil.getCurrentTimeStamp() + ".txt");
 
 
-                    writer = new PrintWriter(logFile, "UTF-8");
+                writer = new PrintWriter(logFile, "UTF-8");
 
-                    writer.println("Device name: " + Model.instance.getSelectedDevice().getName());
-                    writer.println("Model: " + Model.instance.getSelectedDevice().getModel());
-                    writer.println("Android version: " + Model.instance.getSelectedDevice().getAndroidVersion());
-                    writer.println();
+                writer.println("Device name: " + Model.instance.getSelectedDevice().getName());
+                writer.println("Model: " + Model.instance.getSelectedDevice().getModel());
+                writer.println("Android version: " + Model.instance.getSelectedDevice().getAndroidVersion());
+                writer.println();
 
-                    Pattern processReg = Pattern.compile("\\s\\s([\\s\\d]+)\\s");
-
+                Pattern processReg = Pattern.compile("\\s([\\s\\d]+)\\s");
+                synchronized (modifyProcessMapMarker) {
+                    processListUpdate = true;
                     for (String line : listToSave) {
-
                         Matcher matcher = processReg.matcher(line);
                         if (matcher.find()) {
                             String processUid = matcher.group(1);
                             String[] split = processUid.split("\\s");
-                            synchronized (modifyProcessMapMarker) {
-                                PackageProcess packageProcess = split.length > 1 ? processList.get(split[0]) : null;
-                                if (Objects.nonNull(packageProcess)) {
-                                    line = line.replace(processUid, processUid + "/" + packageProcess.process);
-                                    Logger.d(line);
-                                    writer.println(line);
-                                } else {
-                                    writer.println(line);
-                                }
-                            }
-                        }
-                        writer.println(line);
-                    }
 
-                    writer.close();
-                    Logger.fs("Log saved: " + logFile.getAbsolutePath());
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                    Logger.es("Error creating log: " + e.getMessage());
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                    Logger.es("Error creating log: " + e.getMessage());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Logger.es("Error creating log: " + e.getMessage());
+                            PackageProcess packageProcess = split.length > 1 ? processList.get(split[0]) : null;
+                            if (Objects.nonNull(packageProcess)) {
+                                line = line.replace(processUid, processUid + "/" + packageProcess.process);
+                                writer.println(line);
+                            } else {
+                                writer.println(line);
+                            }
+                        } else {
+                            writer.println(line);
+                        }
+                    }
+                    processListUpdate = false;
                 }
+                writer.close();
+                Logger.fs("Log saved: " + logFile.getAbsolutePath());
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                Logger.es("Error creating log: " + e.getMessage());
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                Logger.es("Error creating log: " + e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+                Logger.es("Error creating log: " + e.getMessage());
             }
         }).start();
     }
@@ -240,17 +248,21 @@ public class LogcatController implements Initializable {
     }
 
     private void updRunningProcesses() {
-        synchronized (modifyProcessMapMarker) {
-            String result = AdbUtils.run("shell ps");
-            String[] split = result.split("\n");
-            for (int i = 1; i < split.length; i++) {
+        if (!processListUpdate && Objects.nonNull(Model.instance.getSelectedDevice())) {
+            synchronized (modifyProcessMapMarker) {
+                processListUpdate = true;
+                String result = AdbUtils.run("shell ps");
+                String[] split = result.split("\n");
+                for (int i = 1; i < split.length; i++) {
 
-                PackageProcess packageProcess = new PackageProcess();
-                String[] process = split[i].split("\\s+");
-                packageProcess.process = process[process.length - 1];
-                packageProcess.PID = process[1];
+                    PackageProcess packageProcess = new PackageProcess();
+                    String[] process = split[i].split("\\s+");
+                    packageProcess.process = process[process.length - 1];
+                    packageProcess.PID = process[1];
 
-                processList.put(packageProcess.PID, packageProcess);
+                    processList.put(packageProcess.PID, packageProcess);
+                }
+                processListUpdate = false;
             }
         }
     }

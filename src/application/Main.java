@@ -11,6 +11,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -20,6 +21,8 @@ import java.io.PrintStream;
 public class Main extends Application {
 
 	public static HostServices hostService;
+
+	public static Font courierFont13;
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
@@ -40,6 +43,8 @@ public class Main extends Application {
 
 		FXMLLoader loader = new FXMLLoader(getClass().getResource("ui/simple/FXMLMain.fxml"));
 		//FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLMain.fxml"));
+
+		courierFont13 =Font.loadFont(getClass().getResource("cour.ttf").toString(), 13);
 
 		Parent root = loader.load();
 		Scene scene = new Scene(root, 1200, 620);

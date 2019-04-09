@@ -85,8 +85,10 @@ public class ADBHelper {
 
     public static String install(String selectedApk) {
 
-        String result = AdbUtils.run("install -r -t " + selectedApk + "");
+        String result = AdbUtils.run("install -r -t \"" + selectedApk + "\"");
         String[] split = result.split("\n");
+
+        Logger.d("install result: " + result);
 
         if (split.length > 0) {
             if (split[split.length - 1].contains("Failure") || split[split.length - 1].contains("Missing")) {

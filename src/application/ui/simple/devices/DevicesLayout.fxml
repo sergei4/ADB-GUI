@@ -32,7 +32,7 @@
                         <Image url="@../../../../res/img_device.png" />
                      </image>
                   </ImageView>
-                  <StackPane maxHeight="60.0" minHeight="60.0" prefHeight="150.0" style="-fx-background-color: #cccccc88; -fx-background-radius: 4;">
+                  <StackPane maxHeight="80.0" minHeight="60.0" prefHeight="150.0" style="-fx-background-color: #cccccc88; -fx-background-radius: 4;">
                      <children>
                         <Label text="Drag Apk to Install" textAlignment="CENTER" textFill="#1e1e1e" wrapText="true">
                            <font>
