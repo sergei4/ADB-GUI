@@ -3,9 +3,9 @@ package application.logexceptions;
 import application.AdbUtils;
 import application.DateUtil;
 import application.DialogUtil;
-import application.preferences.Preferences;
 import application.log.Logger;
 import application.model.Model;
+import application.preferences.Preferences;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -15,7 +15,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +73,7 @@ public class LogExceptionsController implements Initializable {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                String logcatCommand = AdbUtils.getAdbCommand("logcat");
+                String logcatCommand = AdbUtils.getAdbCommand(Model.instance.getSelectedDeviceId(), "logcat");
 
                 Process process;
                 try {
@@ -170,7 +175,7 @@ public class LogExceptionsController implements Initializable {
 
     public void onFindExceptionsClicked(ActionEvent actionEvent) {
 
-        if (logListItems.size() == 0){
+        if (logListItems.size() == 0) {
             DialogUtil.showErrorDialog("Press 'Start' first, we need some logs to analyze");
             return;
         }
@@ -195,7 +200,7 @@ public class LogExceptionsController implements Initializable {
                 if (exception.isPartOfRxception(log)) {
                     exception.addLog(log);
                 } else {
-                    if (exception.logs.size() <= 1){
+                    if (exception.logs.size() <= 1) {
                         exceptions.remove(exception);
                     }
                     exception = null;
@@ -233,12 +238,12 @@ public class LogExceptionsController implements Initializable {
             logListItems.add(log.getFullLog());
         }
 
-        labelExceptions.setText( (i + 1) + "/" + exceptions.size());
+        labelExceptions.setText((i + 1) + "/" + exceptions.size());
     }
 
     public void onPreviousExceptionsClicked(ActionEvent actionEvent) {
         int i = exceptionIndex - 1;
-        if (i < 0){
+        if (i < 0) {
             i = exceptions.size() - 1;
         }
 
@@ -247,7 +252,7 @@ public class LogExceptionsController implements Initializable {
 
     public void onNextExceptionsClicked(ActionEvent actionEvent) {
         int i = exceptionIndex + 1;
-        if (i >= exceptions.size()){
+        if (i >= exceptions.size()) {
             i = 0;
         }
 

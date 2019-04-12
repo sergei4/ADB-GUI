@@ -61,8 +61,6 @@ public class LogcatController implements Initializable {
 
     private final Object modifyProcessMapMarker = new Object();
 
-    private boolean processListUpdate = false;
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
@@ -119,7 +117,7 @@ public class LogcatController implements Initializable {
         buttonToggle.setText("Stop");
 
         mainExecutor.execute(() -> {
-            String logcatCommand = AdbUtils.getAdbCommand("logcat");
+            String logcatCommand = AdbUtils.getAdbCommand(Model.instance.getSelectedDeviceId(), "logcat -t 12000");
 
             Process process;
             try {
@@ -198,7 +196,6 @@ public class LogcatController implements Initializable {
 
                 Pattern processReg = Pattern.compile("\\s([\\s\\d]+)\\s");
                 synchronized (modifyProcessMapMarker) {
-                    processListUpdate = true;
                     for (String line : listToSave) {
                         Matcher matcher = processReg.matcher(line);
                         if (matcher.find()) {
@@ -216,7 +213,6 @@ public class LogcatController implements Initializable {
                             writer.println(line);
                         }
                     }
-                    processListUpdate = false;
                 }
                 writer.close();
                 Logger.fs("Log saved: " + logFile.getAbsolutePath());
@@ -248,21 +244,26 @@ public class LogcatController implements Initializable {
     }
 
     private void updRunningProcesses() {
-        if (!processListUpdate && Objects.nonNull(Model.instance.getSelectedDevice())) {
+        if (Objects.nonNull(Model.instance.getSelectedDevice())) {
+
+            String result = AdbUtils.run("shell ps");
+            String[] split = result.split("\n");
+
+            List<PackageProcess> activeProcesses = new ArrayList<>();
+            for (int i = 1; i < split.length; i++) {
+
+                PackageProcess packageProcess = new PackageProcess();
+                String[] process = split[i].split("\\s+");
+                packageProcess.process = process[process.length - 1];
+                packageProcess.PID = process[1];
+
+                activeProcesses.add(packageProcess);
+            }
+
             synchronized (modifyProcessMapMarker) {
-                processListUpdate = true;
-                String result = AdbUtils.run("shell ps");
-                String[] split = result.split("\n");
-                for (int i = 1; i < split.length; i++) {
-
-                    PackageProcess packageProcess = new PackageProcess();
-                    String[] process = split[i].split("\\s+");
-                    packageProcess.process = process[process.length - 1];
-                    packageProcess.PID = process[1];
-
-                    processList.put(packageProcess.PID, packageProcess);
+                for (PackageProcess process : activeProcesses) {
+                    processList.put(process.PID, process);
                 }
-                processListUpdate = false;
             }
         }
     }

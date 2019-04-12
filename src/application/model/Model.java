@@ -14,150 +14,155 @@ import java.util.List;
 import java.util.Set;
 
 public class Model {
-	Device selectedDevice;
+    Device selectedDevice;
 
-	List<Device> availableDevices = new ArrayList<Device>();
+    List<Device> availableDevices = new ArrayList<Device>();
 
-	public static volatile Model instance = new Model();
+    public static volatile Model instance = new Model();
 
-	Set<ModelListener> modelListeners = new HashSet<>();
+    Set<ModelListener> modelListeners = new HashSet<>();
 
-	Set<ModelListener> selectedDeviceListeners = new HashSet<>();
+    Set<ModelListener> selectedDeviceListeners = new HashSet<>();
 
-	ArrayList<CommandBatch> commandBatches = new ArrayList<>();
+    ArrayList<CommandBatch> commandBatches = new ArrayList<>();
 
-	private Model() {
+    private Model() {
 
-	}
+    }
 
-	public synchronized void addModelListener(ModelListener modelListener){
-		modelListeners.add(modelListener);
-	}
+    public synchronized void addModelListener(ModelListener modelListener) {
+        modelListeners.add(modelListener);
+    }
 
-	public synchronized void removeModelListener(ModelListener modelListener){
-		modelListeners.remove(modelListener);
-	}
+    public synchronized void removeModelListener(ModelListener modelListener) {
+        modelListeners.remove(modelListener);
+    }
 
-	public synchronized void addSelectedDeviceListener(ModelListener modelListener){
-		selectedDeviceListeners.add(modelListener);
-	}
+    public synchronized void addSelectedDeviceListener(ModelListener modelListener) {
+        selectedDeviceListeners.add(modelListener);
+    }
 
-	public synchronized void removeSelectedDeviceListener(ModelListener modelListener){
-		selectedDeviceListeners.remove(modelListener);
-	}
+    public synchronized void removeSelectedDeviceListener(ModelListener modelListener) {
+        selectedDeviceListeners.remove(modelListener);
+    }
 
-	public synchronized List<Device> getAvailableDevices(){
-		ArrayList<Device> devices = new ArrayList<Device>();
-		devices.addAll(availableDevices);
+    public synchronized List<Device> getAvailableDevices() {
+        ArrayList<Device> devices = new ArrayList<Device>();
+        devices.addAll(availableDevices);
 
-		return devices;
-	}
+        return devices;
+    }
 
-	public synchronized void checkDevicesFound(List<Device> foundDevices) {
-		boolean changed = false;
-		for (Device deviceFound : foundDevices) {
-			int index = availableDevices.indexOf(deviceFound);
-			addDeviceInfo(deviceFound);
+    public synchronized void checkDevicesFound(List<Device> foundDevices) {
+        boolean changed = false;
+        for (Device deviceFound : foundDevices) {
+            int index = availableDevices.indexOf(deviceFound);
+            addDeviceInfo(deviceFound);
 
-			if (index < 0) {
-				// not exists
-				Logger.d("Found new device: " + deviceFound.getId());
+            if (index < 0) {
+                // not exists
+                Logger.d("Found new device: " + deviceFound.getId());
 
 
-				availableDevices.add(deviceFound);
-				changed = true;
-			} else {
-				Device availableDevice = availableDevices.get(index);
-				changed = availableDevice.copy(deviceFound) || changed;
-			}
-		}
+                availableDevices.add(deviceFound);
+                changed = true;
+            } else {
+                Device availableDevice = availableDevices.get(index);
+                changed = availableDevice.copy(deviceFound) || changed;
+            }
+        }
 
-		Iterator<Device> i = availableDevices.iterator();
-		while (i.hasNext()) {
-			Device deviceExisting = i.next(); // must be called before you can
-												// call i.remove()
+        Iterator<Device> i = availableDevices.iterator();
+        while (i.hasNext()) {
+            Device deviceExisting = i.next(); // must be called before you can
+            // call i.remove()
 
-			if (!foundDevices.contains(deviceExisting)) {
-				// not exists
-				Logger.d("Lost device: " + deviceExisting.getId());
-				i.remove();
-				changed = true;
-			}
-		}
+            if (!foundDevices.contains(deviceExisting)) {
+                // not exists
+                Logger.d("Lost device: " + deviceExisting.getId());
+                i.remove();
+                changed = true;
+            }
+        }
+        if (availableDevices.size() <= 0) {
+            selectedDevice = null;
+        }
+        if (changed) {
+            Logger.d("Device change detected");
+            notifyListeners();
+        }
+    }
 
-		if (changed) {
-			Logger.d("Device change detected");
-			notifyListeners();
-		}
-	}
+    private void addDeviceInfo(Device deviceFaund) {
+        String id = deviceFaund.getId();
+        if (id.startsWith("emulator")) {
+            deviceFaund.setName("Emulator");
+            deviceFaund.setEmulator(true);
 
-	private void addDeviceInfo(Device deviceFaund) {
-		String id = deviceFaund.getId();
-		if (id.startsWith("emulator")){
-			deviceFaund.setName("Emulator");
-			deviceFaund.setEmulator(true);
+            // set port
+        } else {
+            deviceFaund.setName(deviceFaund.getModel());
+        }
+        String[] split = AdbUtils.run(id, "shell getprop ro.build.version.release").split("\n");
 
-			// set port
-		} else {
-			deviceFaund.setName(deviceFaund.getModel());
-		}
-		String[] split =
-				AdbUtils.run("shell getprop ro.build.version.release").split("\n");
+        if (split.length > 0) {
+            deviceFaund.setAndroidVersion(split[0]);
+        }
+    }
 
-		if (split.length > 0){
-			deviceFaund.setAndroidVersion(split[0]);
-		}
-	}
-
-	private synchronized void notifyListeners() {
+    private synchronized void notifyListeners() {
         ModelListener.notify(modelListeners);
-	}
+    }
 
-	public void setSelectedDevice(Device device) {
-		selectedDevice = device;
+    public void setSelectedDevice(Device device) {
+        selectedDevice = device;
 
         ModelListener.notify(selectedDeviceListeners);
-	}
+    }
 
-	public Device getSelectedDevice() {
-		return selectedDevice;
-	}
+    public Device getSelectedDevice() {
+        return selectedDevice;
+    }
 
-	public void clearDevices() {
-		selectedDevice = null;
-		availableDevices.clear();
+    public String getSelectedDeviceId() {
+        return selectedDevice == null ? null : selectedDevice.id;
+    }
 
-		notifyListeners();
-		ModelListener.notify(selectedDeviceListeners);
-	}
+    public void clearDevices() {
+        selectedDevice = null;
+        availableDevices.clear();
 
-	public ArrayList<CommandBatch> getCommandBatches() {
-		return commandBatches;
-	}
+        notifyListeners();
+        ModelListener.notify(selectedDeviceListeners);
+    }
 
-	public void loadCommandBatches() {
-		commandBatches.clear();
+    public ArrayList<CommandBatch> getCommandBatches() {
+        return commandBatches;
+    }
 
-		for (File commandFile : Preferences.getInstance().getCommandFolder().listFiles()) {
-			Logger.d("Read: " + commandFile.getName());
-			String commands;
-			if (commandFile.getName().startsWith(".")) {
-				Logger.e("Will not try to read: " + commandFile);
-				continue;
-			}
+    public void loadCommandBatches() {
+        commandBatches.clear();
 
-			try {
-				commands = FileUtils.readFile(commandFile.getAbsolutePath());
-				Gson gson = new Gson();
-				CommandBatch commandBatch = gson.fromJson(commands, CommandBatch.class);
-				commandBatch.name = commandFile.getName();
+        for (File commandFile : Preferences.getInstance().getCommandFolder().listFiles()) {
+            Logger.d("Read: " + commandFile.getName());
+            String commands;
+            if (commandFile.getName().startsWith(".")) {
+                Logger.e("Will not try to read: " + commandFile);
+                continue;
+            }
 
-				commandBatches.add(commandBatch);
+            try {
+                commands = FileUtils.readFile(commandFile.getAbsolutePath());
+                Gson gson = new Gson();
+                CommandBatch commandBatch = gson.fromJson(commands, CommandBatch.class);
+                commandBatch.name = commandFile.getName();
 
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+                commandBatches.add(commandBatch);
 
-	}
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
 }
