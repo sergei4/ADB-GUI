@@ -49,7 +49,7 @@ public class Main extends Application {
 		Parent root = loader.load();
 		Scene scene = new Scene(root, 1200, 620);
 
-		Image iconImage = new Image("/res/icon.png");
+		Image iconImage = new Image("/res/devexperts_logo.png");
 		primaryStage.getIcons().add(iconImage);
 
 		try {

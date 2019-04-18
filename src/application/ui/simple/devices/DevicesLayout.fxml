@@ -23,31 +23,30 @@
         </HBox>
 
         <ListView fx:id="listDevices" prefHeight="500.0" prefWidth="200.0" />
-      <VBox fx:id="devicePane" prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #ffffff; -fx-background-radius: 4;">
+      <StackPane minHeight="-Infinity" prefHeight="220.0" prefWidth="220.0" style="-fx-background-color: #ffffff; -fx-background-radius: 4;">
          <children>
-            <StackPane prefHeight="150.0" prefWidth="200.0">
+            <VBox fx:id="devicePane" alignment="CENTER" StackPane.alignment="CENTER">
                <children>
-                  <ImageView fitHeight="200.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
+                  <ImageView fitHeight="80.0" fitWidth="80.0" pickOnBounds="true" preserveRatio="true">
                      <image>
-                        <Image url="@../../../../res/img_device.png" />
+                        <Image url="@img_device.png" />
                      </image>
                   </ImageView>
-                  <StackPane maxHeight="80.0" minHeight="60.0" prefHeight="150.0" style="-fx-background-color: #cccccc88; -fx-background-radius: 4;">
-                     <children>
-                        <Label text="Drag Apk to Install" textAlignment="CENTER" textFill="#1e1e1e" wrapText="true">
-                           <font>
-                              <Font size="22.0" />
-                           </font>
-                        </Label>
-                     </children>
-                  </StackPane>
+                  <Label text="Drag apk here to install" textAlignment="CENTER" textFill="#1e1e1e" wrapText="true">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets top="16.0" />
+                     </VBox.margin>
+                       </Label>
                </children>
-            </StackPane>
+               <padding>
+                  <Insets bottom="16.0" left="16.0" right="16.0" top="16.0" />
+               </padding>
+            </VBox>
          </children>
-         <padding>
-            <Insets bottom="16.0" left="16.0" right="16.0" top="16.0" />
-         </padding>
-      </VBox>
+      </StackPane>
 
     </VBox>
     <padding>

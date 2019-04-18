@@ -8,6 +8,8 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
@@ -19,17 +21,32 @@ public class FXMLMainController implements WindowController, Initializable {
     private Stage stage;
 
     @FXML
+    private Pane workplace;
+
+    @FXML
+    private ToggleButton btnOpenScreenShotScreen;
+
+    @FXML
+    private ToggleButton btnOpenLogScreen;
+
+    @FXML
     private Label appLogText;
 
     @FXML
     private DevicesController devicesController;
 
+    @FXML
+    private Pane logcat;
+
+    @FXML
+    private Pane screenshot;
+
     @Override
     public void setStageAndSetupListeners(Stage stage) {
         this.stage = stage;
-        stage.setWidth(1000);
+        stage.setWidth(1200);
         stage.setHeight(600);
-        stage.setMinWidth(1000);
+        stage.setMinWidth(1200);
         stage.setMinHeight(600);
 
         stage.setMaxWidth(1400);
@@ -38,6 +55,10 @@ public class FXMLMainController implements WindowController, Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+
+        screenshot.visibleProperty().bind(btnOpenScreenShotScreen.selectedProperty());
+        logcat.visibleProperty().bind(btnOpenLogScreen.selectedProperty());
+
         appLogText.setText("");
 
         Logger.setShowLogListener(new Logger.LoggerListener() {
