@@ -145,16 +145,6 @@ public class DevicesController implements Initializable {
         killed = !killed;
     }
 
-    @FXML
-    private void handleTakeSnapshotClicked(ActionEvent event) {
-        try {
-            ScreenCaptureController.showScreen(getClass());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
     private void refreshDevices() {
 
         Device selectedDevice = Model.instance.getSelectedDevice();

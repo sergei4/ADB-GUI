@@ -1,10 +1,14 @@
 package application.ui.simple;
 
+import application.FolderUtil;
 import application.WindowController;
 import application.log.Logger;
+import application.preferences.Preferences;
 import application.startupcheck.StartupCheckController;
 import application.ui.simple.devices.DevicesController;
+import application.ui.simple.logcat.LogcatController;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
@@ -13,15 +17,13 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 public class FXMLMainController implements WindowController, Initializable {
     private Stage stage;
-
-    @FXML
-    private Pane workplace;
 
     @FXML
     private ToggleButton btnOpenScreenShotScreen;
@@ -34,6 +36,9 @@ public class FXMLMainController implements WindowController, Initializable {
 
     @FXML
     private DevicesController devicesController;
+
+    @FXML
+    private LogcatController logcatController;
 
     @FXML
     private Pane logcat;
@@ -97,5 +102,29 @@ public class FXMLMainController implements WindowController, Initializable {
                 }
             }
         });
+    }
+
+    public void onOpenLogFolderClicked(ActionEvent actionEvent) {
+        if (Desktop.isDesktopSupported()) {
+            try {
+                Desktop.getDesktop().open(Preferences.getInstance().getLogcatFolder());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void onOpenScreenshotFolderClicked(ActionEvent actionEvent) {
+        if (Desktop.isDesktopSupported()) {
+            try {
+                Desktop.getDesktop().open(FolderUtil.getSnapshotFolder());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void onSaveLogFolderClicked(ActionEvent actionEvent) {
+        logcatController.saveSelectedDeviceLog();
     }
 }

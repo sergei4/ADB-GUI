@@ -12,6 +12,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
@@ -27,6 +28,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +112,6 @@ public class LogcatController implements Initializable {
     }
 
     private void start() {
-
         toggleButtonsStates(false);
         logListItems.clear();
         working = true;
@@ -171,62 +172,73 @@ public class LogcatController implements Initializable {
         });*/
     }
 
+    public void saveSelectedDeviceLog() {
+        new Thread(() -> {
+            Logger.ds("Gathering information...");
+            String result = AdbUtils.run(Model.instance.getSelectedDeviceId(), "logcat -t 12000");
+            saveLogToFile(Arrays.asList(result.split("\\n")));
+        }).start();
+    }
+
+    @FXML
     public void onSaveToFileClicked(ActionEvent actionEvent) {
         final List<String> listToSave = new ArrayList<>(logListItems.size());
         listToSave.addAll(logListItems);
 
-        new Thread(() -> {
-            File logcatFolder = Preferences.getInstance().getLogcatFolder();
+        new Thread(() -> saveLogToFile(listToSave)).start();
+    }
 
-            PrintWriter writer = null;
-            Logger.ds("Saving log...");
-            try {
-                File logFile = new File(logcatFolder,
-                        Model.instance.getSelectedDevice().getName() + " " +
-                                Model.instance.getSelectedDevice().getAndroidVersion() + " " +
-                                DateUtil.getCurrentTimeStamp() + ".txt");
+    private void saveLogToFile(List<String> listToSave) {
+        File logcatFolder = Preferences.getInstance().getLogcatFolder();
+
+        PrintWriter writer = null;
+        Logger.ds("Saving log...");
+        try {
+            File logFile = new File(logcatFolder,
+                    Model.instance.getSelectedDevice().getName() + " " +
+                            Model.instance.getSelectedDevice().getAndroidVersion() + " " +
+                            DateUtil.getCurrentTimeStamp() + ".txt");
 
 
-                writer = new PrintWriter(logFile, "UTF-8");
+            writer = new PrintWriter(logFile, "UTF-8");
 
-                writer.println("Device name: " + Model.instance.getSelectedDevice().getName());
-                writer.println("Model: " + Model.instance.getSelectedDevice().getModel());
-                writer.println("Android version: " + Model.instance.getSelectedDevice().getAndroidVersion());
-                writer.println();
+            writer.println("Device name: " + Model.instance.getSelectedDevice().getName());
+            writer.println("Model: " + Model.instance.getSelectedDevice().getModel());
+            writer.println("Android version: " + Model.instance.getSelectedDevice().getAndroidVersion());
+            writer.println();
 
-                Pattern processReg = Pattern.compile("\\s([\\s\\d]+)\\s");
-                synchronized (modifyProcessMapMarker) {
-                    for (String line : listToSave) {
-                        Matcher matcher = processReg.matcher(line);
-                        if (matcher.find()) {
-                            String processUid = matcher.group(1);
-                            String[] split = processUid.split("\\s");
+            Pattern processReg = Pattern.compile("\\s([\\s\\d]+)\\s");
+            synchronized (modifyProcessMapMarker) {
+                for (String line : listToSave) {
+                    Matcher matcher = processReg.matcher(line);
+                    if (matcher.find()) {
+                        String processUid = matcher.group(1);
+                        String[] split = processUid.split("\\s");
 
-                            PackageProcess packageProcess = split.length > 1 ? processList.get(split[0]) : null;
-                            if (Objects.nonNull(packageProcess)) {
-                                line = line.replace(processUid, processUid + "/" + packageProcess.process);
-                                writer.println(line);
-                            } else {
-                                writer.println(line);
-                            }
+                        PackageProcess packageProcess = split.length > 1 ? processList.get(split[0]) : null;
+                        if (Objects.nonNull(packageProcess)) {
+                            line = line.replace(processUid, processUid + "/" + packageProcess.process);
+                            writer.println(line);
                         } else {
                             writer.println(line);
                         }
+                    } else {
+                        writer.println(line);
                     }
                 }
-                writer.close();
-                Logger.fs("Log saved: " + logFile.getAbsolutePath());
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                Logger.es("Error creating log: " + e.getMessage());
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-                Logger.es("Error creating log: " + e.getMessage());
-            } catch (Exception e) {
-                e.printStackTrace();
-                Logger.es("Error creating log: " + e.getMessage());
             }
-        }).start();
+            writer.close();
+            Logger.fs("Log saved: " + logFile.getAbsolutePath());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Logger.es("Error creating log: " + e.getMessage());
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            Logger.es("Error creating log: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Logger.es("Error creating log: " + e.getMessage());
+        }
     }
 
     public void onOpenLogFolderClicked(ActionEvent actionEvent) {

@@ -13,22 +13,20 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<BorderPane prefHeight="700.0" prefWidth="1100.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/8.0.172-ea"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.FXMLMainController">
+
+<BorderPane prefHeight="550.0" prefWidth="1100.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.FXMLMainController">
     <right>
         <StackPane>
-            <fx:include fx:id="devices" source="devices/DevicesLayout.fxml"/>
+            <fx:include fx:id="devices" source="devices/DevicesLayout.fxml" />
         </StackPane>
 
     </right>
     <bottom>
         <AnchorPane prefWidth="200.0" style="-fx-background-color: #ededed;" BorderPane.alignment="CENTER">
             <children>
-                <Label fx:id="appLogText" layoutX="14.0" layoutY="10.0" text="[Application Log]"
-                       AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="18.0"
-                       AnchorPane.topAnchor="10.0">
+                <Label fx:id="appLogText" layoutX="14.0" layoutY="10.0" text="[Application Log]" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="18.0" AnchorPane.topAnchor="10.0">
                     <font>
-                        <Font size="14.0"/>
+                        <Font size="14.0" />
                     </font>
                 </Label>
             </children>
@@ -38,128 +36,122 @@
         <VBox alignment="TOP_CENTER" prefWidth="100.0" BorderPane.alignment="CENTER">
             <children>
                 <fx:define>
-                    <ToggleGroup fx:id="optionsGroup"/>
+                    <ToggleGroup fx:id="optionsGroup" />
                 </fx:define>
                 <Label text="Screenshot">
                     <font>
-                        <Font name="System Bold" size="15.0"/>
+                        <Font name="System Bold" size="15.0" />
                     </font>
                     <VBox.margin>
-                        <Insets top="4.0"/>
+                        <Insets top="4.0" />
                     </VBox.margin>
                 </Label>
-                <RadioToggleButton fx:id="btnOpenScreenShotScreen" mnemonicParsing="false">
+                <RadioToggleButton fx:id="btnOpenScreenShotScreen" mnemonicParsing="false" prefHeight="64.0" prefWidth="64.0" selected="true" styleClass="main_menu_toggle_button">
                     <graphic>
-                        <ImageView fitHeight="150.0" fitWidth="64" layoutY="64" pickOnBounds="true"
-                                   preserveRatio="true">
+                        <ImageView fitHeight="48.0" fitWidth="48.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
                             <image>
-                                <Image url="@ic_screenshot.png"/>
+                                <Image url="@ic_screenshot.png" />
                             </image>
                         </ImageView>
                     </graphic>
                     <padding>
-                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
+                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
                     </padding>
                     <VBox.margin>
-                        <Insets top="8.0"/>
+                        <Insets top="8.0" />
                     </VBox.margin>
                     <toggleGroup>
-                        <ToggleGroup fx:id="optionsGroup"/>
+                        <ToggleGroup fx:id="optionsGroup" />
                     </toggleGroup>
                 </RadioToggleButton>
-                <Button mnemonicParsing="false" prefHeight="64.0" prefWidth="64.0">
+                <Button mnemonicParsing="false" onAction="#onOpenScreenshotFolderClicked" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_button">
                     <graphic>
-                        <ImageView fitHeight="48.0" fitWidth="48.0" layoutY="64" pickOnBounds="true"
-                                   preserveRatio="true">
+                        <ImageView fitHeight="40.0" fitWidth="40.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
                             <image>
-                                <Image url="@ic_folder.png"/>
+                                <Image url="@ic_folder.png" />
                             </image>
                             <viewport>
-                                <Rectangle2D/>
+                                <Rectangle2D />
                             </viewport>
                         </ImageView>
                     </graphic>
                     <padding>
-                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
+                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
                     </padding>
                     <VBox.margin>
-                        <Insets top="8.0"/>
+                        <Insets top="8.0" />
                     </VBox.margin>
                 </Button>
                 <Label text="Logging">
                     <VBox.margin>
-                        <Insets top="24.0"/>
+                        <Insets top="24.0" />
                     </VBox.margin>
                     <font>
-                        <Font name="System Bold" size="15.0"/>
+                        <Font name="System Bold" size="15.0" />
                     </font>
                 </Label>
-                <Button mnemonicParsing="false" prefHeight="64.0" prefWidth="64.0">
+                <Button mnemonicParsing="false" onAction="#onSaveLogFolderClicked" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_button">
                     <graphic>
-                        <ImageView fx:id="btnSaveLog" fitHeight="48.0" fitWidth="48.0" layoutY="64" pickOnBounds="true"
-                                   preserveRatio="true">
+                        <ImageView fx:id="btnSaveLog" fitHeight="40.0" fitWidth="40.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
                             <image>
-                                <Image url="@icons8-open-document-80.png"/>
+                                <Image url="@ic_create_log.png" />
                             </image>
                             <viewport>
-                                <Rectangle2D/>
+                                <Rectangle2D />
                             </viewport>
                         </ImageView>
                     </graphic>
                     <padding>
-                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
+                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
                     </padding>
                     <VBox.margin>
-                        <Insets top="8.0"/>
+                        <Insets top="8.0" />
                     </VBox.margin>
                 </Button>
-                <RadioToggleButton fx:id="btnOpenLogScreen" mnemonicParsing="false" prefHeight="64.0" prefWidth="64.0"
-                                   toggleGroup="$optionsGroup">
+                <RadioToggleButton fx:id="btnOpenLogScreen" mnemonicParsing="false" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_toggle_button" toggleGroup="$optionsGroup">
                     <graphic>
-                        <ImageView fitHeight="48.0" fitWidth="48.0" layoutY="64" pickOnBounds="true"
-                                   preserveRatio="true">
+                        <ImageView fitHeight="48.0" fitWidth="48.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
                             <image>
-                                <Image url="@ic_console.png"/>
+                                <Image url="@ic_console.png" />
                             </image>
                         </ImageView>
                     </graphic>
                     <padding>
-                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
+                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
                     </padding>
                     <VBox.margin>
-                        <Insets top="8.0"/>
+                        <Insets top="8.0" />
                     </VBox.margin>
                 </RadioToggleButton>
-                <Button mnemonicParsing="false" prefHeight="64.0" prefWidth="64.0">
+                <Button mnemonicParsing="false" onAction="#onOpenLogFolderClicked" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_button">
                     <graphic>
-                        <ImageView fitHeight="48.0" fitWidth="48.0" layoutY="64" pickOnBounds="true"
-                                   preserveRatio="true">
+                        <ImageView fitHeight="40.0" fitWidth="40.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
                             <image>
-                                <Image url="@ic_folder.png"/>
+                                <Image url="@ic_folder.png" />
                             </image>
                             <viewport>
-                                <Rectangle2D/>
+                                <Rectangle2D />
                             </viewport>
                         </ImageView>
                     </graphic>
                     <padding>
-                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
+                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
                     </padding>
                     <VBox.margin>
-                        <Insets top="8.0"/>
+                        <Insets top="8.0" />
                     </VBox.margin>
                 </Button>
 
             </children>
             <padding>
-                <Insets bottom="4.0" left="4.0" right="4.0" top="4.0"/>
+                <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
             </padding>
         </VBox>
     </left>
     <center>
         <StackPane fx:id="workplace" prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-            <fx:include fx:id="logcat" source="logcat/LogcatLayout.fxml"/>
-            <fx:include fx:id="screenshot" source="screencapture/ScreenCaptureLayout.fxml"/>
+            <fx:include fx:id="logcat" source="logcat/LogcatLayout.fxml" />
+            <fx:include fx:id="screenshot" source="screencapture/ScreenCaptureLayout.fxml" />
         </StackPane>
     </center>
 </BorderPane>

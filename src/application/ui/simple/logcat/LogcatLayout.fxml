@@ -8,20 +8,21 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+
 <StackPane xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.logcat.LogcatController">
     <VBox spacing="4.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-      <AnchorPane>
-         <children>
-              <HBox alignment="CENTER_LEFT" spacing="4.0">
-               <Label text="Logcat" />
-                  <Button fx:id="buttonToggle" onAction="#onToggleClicked" text="Start" />
-                  <!--<Button text="Clear logs (locally)" onAction="#onClearLocalyClicked" visible="false"/>-->
-                  <Button fx:id="buttonClearLogCat" onAction="#onClearLocallyClicked" text="Clear logcat" />
-                  <Button fx:id="buttonSaveToFile" onAction="#onSaveToFileClicked" text="Save to file" />
-              </HBox>
-            <Button fx:id="buttonOpenLogFolder" mnemonicParsing="false" onAction="#onOpenLogFolderClicked" text="Open folder" AnchorPane.rightAnchor="0.0" />
-         </children>
-      </AnchorPane>
+        <AnchorPane>
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="4.0">
+                    <Label text="Logcat" visible="false" managed="false"/>
+                    <Button fx:id="buttonToggle" onAction="#onToggleClicked" text="Start" />
+                    <!--<Button text="Clear logs (locally)" onAction="#onClearLocalyClicked" visible="false"/>-->
+                    <Button fx:id="buttonClearLogCat" onAction="#onClearLocallyClicked" text="Clear logcat" />
+                    <Button fx:id="buttonSaveToFile" onAction="#onSaveToFileClicked" text="Save to file" />
+                </HBox>
+                <Button fx:id="buttonOpenLogFolder" mnemonicParsing="false" onAction="#onOpenLogFolderClicked" text="Open folder" AnchorPane.rightAnchor="0.0" />
+            </children>
+        </AnchorPane>
         <ListView fx:id="listViewLog" prefHeight="800.0" />
     </VBox>
     <padding>
