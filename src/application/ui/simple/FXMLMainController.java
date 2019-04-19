@@ -51,11 +51,12 @@ public class FXMLMainController implements WindowController, Initializable {
         this.stage = stage;
         stage.setWidth(1200);
         stage.setHeight(600);
+
         stage.setMinWidth(1200);
-        stage.setMinHeight(600);
+        stage.setMinHeight(550);
 
         stage.setMaxWidth(1400);
-        stage.setMaxHeight(700);
+        stage.setMaxHeight(800);
     }
 
     @Override

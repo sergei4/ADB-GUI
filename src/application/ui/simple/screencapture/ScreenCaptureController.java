@@ -8,6 +8,9 @@ import application.log.Logger;
 import application.model.Model;
 import application.preferences.Preferences;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -18,6 +21,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -25,7 +31,9 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -40,7 +48,7 @@ import java.util.concurrent.Executors;
 public class ScreenCaptureController implements Initializable {
 
     @FXML
-    public StackPane paneImageContainer;
+    public Pane paneImageContainer;
 
     private File snapshotsFolder = FolderUtil.getSnapshotFolder();
 
@@ -50,28 +58,24 @@ public class ScreenCaptureController implements Initializable {
     @FXML
     public Pane pane;
 
+    private Image screenshotImage;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
-//        imageViewCapture.fitWidthProperty().bind(paneImageContainer.widthProperty());
-//        imageViewCapture.fitHeightProperty().bind(paneImageContainer.heightProperty());
-
-//        paneImageContainer.widthProperty().bind(pane.widthProperty());
-//        paneImageContainer.fitHeightProperty().bind(pane.heightProperty());
-
-
-        //startScreenMonitoring();
     }
 
     private void updatePicture() {
-
         File file = getTempSnapshotFile();
         if (file.exists()) {
-            Image image = new Image(file.toURI().toString());
+            screenshotImage = new Image(file.toURI().toString());
 
-            updateScreenRatio(image);
+            updateScreenRatio(screenshotImage);
 
-            imageViewCapture.setImage(image);
+            imageViewCapture.setImage(screenshotImage);
+
+            imageViewCapture.fitWidthProperty().bind(paneImageContainer.widthProperty());
+            imageViewCapture.fitHeightProperty().bind(paneImageContainer.heightProperty());
         }
     }
 
@@ -109,26 +113,27 @@ public class ScreenCaptureController implements Initializable {
 
     @FXML
     public void onSaveClicked(ActionEvent actionEvent) {
-//        String fileName = Model.instance.getSelectedDevice().getName() + " " +
-//                Model.instance.getSelectedDevice().getAndroidVersion() + " " +
-//                DateUtil.getCurrentTimeStamp() + ".png";
-//
-//        fileName = fileName.replace(" ", "");
-//
-//        File snapshotFile = new File(snapshotsFolder, fileName);
-//
-//        Path source = Paths.get(getTempSnapshotFile().getAbsolutePath());
-//        Path destination = Paths.get(snapshotFile.getAbsolutePath());
-//
-//        try {
-//            Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
-////            labelLog.setText("Snapshot saved");
-////            labelLog.setTextFill(Color.GREEN);
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            Logger.es("Error during creating snapshot");
-//        }
+        if (screenshotImage != null) {
+            new Thread(() -> {
+                Logger.ds("Saving snapshot...");
+                String fileName = Model.instance.getSelectedDevice().getName() + " " +
+                        Model.instance.getSelectedDevice().getAndroidVersion() + " " +
+                        DateUtil.getCurrentTimeStamp() + ".png";
+
+                fileName = fileName.replace(" ", "");
+
+                File snapshotFile = new File(snapshotsFolder, fileName);
+
+                BufferedImage bImage = SwingFXUtils.fromFXImage(screenshotImage, null);
+                try {
+                    ImageIO.write(bImage, "png", snapshotFile);
+                    Logger.fs("Snapshot saved: " + snapshotFile.getAbsolutePath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Logger.es("Error during creating snapshot");
+                }
+            }).start();
+        }
     }
 
     public void onOpenFolderClicked(ActionEvent actionEvent) {

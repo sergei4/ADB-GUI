@@ -174,9 +174,13 @@ public class LogcatController implements Initializable {
 
     public void saveSelectedDeviceLog() {
         new Thread(() -> {
-            Logger.ds("Gathering information...");
-            String result = AdbUtils.run(Model.instance.getSelectedDeviceId(), "logcat -t 12000");
-            saveLogToFile(Arrays.asList(result.split("\\n")));
+            String deviceId = Model.instance.getSelectedDeviceId();
+            if (deviceId != null) {
+                Logger.ds("Gathering information...");
+                String result = AdbUtils.run(deviceId, "logcat -t 12000");
+                System.out.println(result);
+                saveLogToFile(Arrays.asList(result.split("\\n")));
+            }
         }).start();
     }
 
