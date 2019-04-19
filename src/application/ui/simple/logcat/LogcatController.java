@@ -178,7 +178,6 @@ public class LogcatController implements Initializable {
             if (deviceId != null) {
                 Logger.ds("Gathering information...");
                 String result = AdbUtils.run(deviceId, "logcat -t 12000");
-                System.out.println(result);
                 saveLogToFile(Arrays.asList(result.split("\\n")));
             }
         }).start();

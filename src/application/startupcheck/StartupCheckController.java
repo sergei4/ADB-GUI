@@ -49,7 +49,7 @@ public class StartupCheckController implements Initializable {
                 }
                 boolean adbExists = ADBHelper.isADBFound();
 
-                Logger.d("Is adb found: " + adbExists);
+                Logger.d("Is adb found: " + Preferences.getInstance().getAdbPath());
 
                 if (!adbExists) {
                     if (tryToFindADB()) {

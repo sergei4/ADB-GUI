@@ -85,25 +85,29 @@ public class Main extends Application {
 	}
 
 	private void findADBPath() {
-		Logger.d("Find adb on: " + Preferences.OS);
+        Logger.d("Find adb on: " + Preferences.OS);
 
-		if (Preferences.OS.startsWith("windows")){
+        if (Preferences.OS.startsWith("windows")) {
+            File adbPath = new File(System.getProperty("user.dir"), "platform-tools");
+            File adbFile = new File(adbPath, "adb.exe");
+            if (adbFile.exists()) {
+                Preferences.getInstance().setAdbPath(adbPath.getAbsolutePath() + "/");
+            }
+        } else {
+            File baseDirectory = new File("/Users/");
 
-		} else {
-			File baseDirectory = new File("/Users/");
+            File[] userFolder = baseDirectory.listFiles();
 
-			File[] userFolder = baseDirectory.listFiles();
-
-			if (userFolder != null)
-			for (File file : userFolder) {
-				File pathCheck = new File(file, "Library/Android/sdk/platform-tools/");
-				if (pathCheck.exists()){
-					Logger.d("Found adb location: " + pathCheck.getAbsolutePath());
-					Preferences.getInstance().setAdbPath(pathCheck.getAbsolutePath() + "/");
-					break;
-				}
-			}
-		}
+            if (userFolder != null)
+                for (File file : userFolder) {
+                    File pathCheck = new File(file, "Library/Android/sdk/platform-tools/");
+                    if (pathCheck.exists()) {
+                        Logger.d("Found adb location: " + pathCheck.getAbsolutePath());
+                        Preferences.getInstance().setAdbPath(pathCheck.getAbsolutePath() + "/");
+                        break;
+                    }
+                }
+        }
 	}
 
 	public static void main(String[] args) {
