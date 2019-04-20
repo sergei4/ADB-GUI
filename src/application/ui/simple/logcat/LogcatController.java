@@ -198,21 +198,21 @@ public class LogcatController implements Initializable {
     }
 
     public void saveSelectedDeviceLog() {
-        Stage dialog = ProgressDialogController.createDialog("Gathering information. Please wait...");
-        dialog.initStyle(StageStyle.UNDECORATED);
-        FXMLMainController.showDialog(dialog);
-        saveSelectedDeviceLogImpl(s -> Platform.runLater(dialog::close));
+        String deviceId = Model.instance.getSelectedDeviceId();
+        if (deviceId != null) {
+            Stage dialog = ProgressDialogController.createDialog("Gathering information. Please wait...");
+            dialog.initStyle(StageStyle.UNDECORATED);
+            FXMLMainController.showDialog(dialog);
+            saveSelectedDeviceLogImpl(deviceId, s -> Platform.runLater(dialog::close));
+        }
     }
 
-    private void saveSelectedDeviceLogImpl(Consumer<String> consumer) {
+    private void saveSelectedDeviceLogImpl(String deviceId, Consumer<String> consumer) {
         new Thread(() -> {
-            String deviceId = Model.instance.getSelectedDeviceId();
-            if (deviceId != null) {
-                Logger.ds("Gathering information...");
-                String result = AdbUtils.run(deviceId, "logcat -t 12000");
-                saveLogToFile(Arrays.asList(result.split("\\n")));
-                consumer.accept("OK");
-            }
+            Logger.ds("Gathering information...");
+            String result = AdbUtils.run(deviceId, "logcat -t 12000");
+            saveLogToFile(Arrays.asList(result.split("\\n")));
+            consumer.accept("finish");
         }).start();
     }
 
