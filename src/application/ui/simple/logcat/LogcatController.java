@@ -8,7 +8,11 @@ import application.model.Model;
 import application.model.ModelListener;
 import application.model.PackageProcess;
 import application.preferences.Preferences;
+import application.ui.simple.FXMLMainController;
+import application.ui.simple.progress.ProgressDialogController;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -18,6 +22,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.util.Pair;
 
 import java.awt.*;
 import java.io.BufferedReader;
@@ -30,7 +37,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +45,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,9 +56,11 @@ public class LogcatController implements Initializable {
 
     private static final long INTERVAL_DURATION = 5000;
 
-    private static ExecutorService mainExecutor = Executors.newSingleThreadExecutor();
+    private boolean working;
 
-    private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
+    private String selectedProcess = "";
+
+    private static ExecutorService mainExecutor = Executors.newSingleThreadExecutor();
 
     @FXML
     public ListView<String> listViewLog;
@@ -61,19 +69,25 @@ public class LogcatController implements Initializable {
     @FXML
     public Button buttonClearLogCat;
     @FXML
-    private ComboBox<String> cbProcessList;
+    private ComboBox<String> runnableProcessList;
 
     private ObservableList<String> logListItems = FXCollections.observableArrayList();
-    private boolean working;
 
     private Map<String, PackageProcess> processList = new HashMap<>();
-    private ObservableList<String> processListItems = FXCollections.observableArrayList();
+    private ObservableList<String> runnablePackegeListItems = FXCollections.observableArrayList();
 
     private final Object modifyProcessMapMarker = new Object();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        cbProcessList.setItems(processListItems);
+        runnableProcessList.setItems(runnablePackegeListItems);
+        runnableProcessList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                selectedProcess = newValue;
+                restart();
+            }
+        });
 
         listViewLog.setItems(logListItems);
         listViewLog.setCellFactory(cell -> new ListCell<String>() {
@@ -107,7 +121,7 @@ public class LogcatController implements Initializable {
                 }
             }
         });
-        scheduledExecutorService.scheduleAtFixedRate(() -> updRunningProcesses(), INTERVAL_DURATION, INTERVAL_DURATION, TimeUnit.MILLISECONDS);
+        new Thread(() -> updRunningProcesses()).start();
     }
 
     public void onToggleClicked(ActionEvent actionEvent) {
@@ -131,16 +145,12 @@ public class LogcatController implements Initializable {
 
             Process process;
             try {
-
                 String[] envp = {};
                 process = Runtime.getRuntime().exec(logcatCommand, envp);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
                 String line = "";
-                while ((line = reader.readLine()) != null) {
-                    if (!working) {
-                        break;
-                    }
+                while (working && (line = reader.readLine()) != null) {
                     addLine(line);
                 }
 
@@ -157,11 +167,28 @@ public class LogcatController implements Initializable {
         buttonToggle.setText("Start");
     }
 
+    private void restart() {
+        if (working) {
+            stop();
+            start();
+        }
+    }
+
     private void addLine(String line) {
+        Logger.d(line);
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                logListItems.add(line);
+                if (!selectedProcess.equals("")) {
+                    synchronized (modifyProcessMapMarker) {
+                        Pair<String, String> process = findProcessWithName(line);
+                        if (process != null && process.getValue().equals(selectedProcess)) {
+                            logListItems.add(line);
+                        }
+                    }
+                } else {
+                    logListItems.add(line);
+                }
             }
         });
     }
@@ -170,34 +197,51 @@ public class LogcatController implements Initializable {
         logListItems.clear();
     }
 
-    public void onClearADBClicked(ActionEvent actionEvent) {
-        //stop();
-        logListItems.clear();
-        /*AdbUtils.runAsync("logcat -c", new AdbUtils.ADBRunListener() {
-            @Override
-            public void onFinish(String resporse) {
-
-            }
-        });*/
+    public void saveSelectedDeviceLog() {
+        Stage dialog = ProgressDialogController.createDialog("Gathering information. Please wait...");
+        dialog.initStyle(StageStyle.UNDECORATED);
+        FXMLMainController.showDialog(dialog);
+        saveSelectedDeviceLogImpl(s -> Platform.runLater(dialog::close));
     }
 
-    public void saveSelectedDeviceLog() {
+    private void saveSelectedDeviceLogImpl(Consumer<String> consumer) {
         new Thread(() -> {
             String deviceId = Model.instance.getSelectedDeviceId();
             if (deviceId != null) {
                 Logger.ds("Gathering information...");
                 String result = AdbUtils.run(deviceId, "logcat -t 12000");
                 saveLogToFile(Arrays.asList(result.split("\\n")));
+                consumer.accept("OK");
             }
         }).start();
     }
 
     @FXML
     public void onSaveToFileClicked(ActionEvent actionEvent) {
-        final List<String> listToSave = new ArrayList<>(logListItems.size());
-        listToSave.addAll(logListItems);
+        new Thread(() -> {
+            final List<String> listToSave = new ArrayList<>(logListItems.size());
+            listToSave.addAll(logListItems);
+            saveLogToFile(listToSave);
+        }).start();
+    }
 
-        new Thread(() -> saveLogToFile(listToSave)).start();
+    private final Pattern processRegexp = Pattern.compile("\\s([\\s\\d]+)\\s");
+
+    private Pair<String, String> findProcessWithName(String logLine) {
+        Matcher matcher = processRegexp.matcher(logLine);
+        if (matcher.find()) {
+            String processUid = matcher.group(1);
+            String[] split = processUid.split("\\s");
+
+            PackageProcess packageProcess = split.length > 1 ? processList.get(split[0]) : null;
+            if (Objects.nonNull(packageProcess)) {
+                return new Pair<>(processUid, packageProcess.process);
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
 
     private void saveLogToFile(List<String> listToSave) {
@@ -219,21 +263,12 @@ public class LogcatController implements Initializable {
             writer.println("Android version: " + Model.instance.getSelectedDevice().getAndroidVersion());
             writer.println();
 
-            Pattern processReg = Pattern.compile("\\s([\\s\\d]+)\\s");
             synchronized (modifyProcessMapMarker) {
                 for (String line : listToSave) {
-                    Matcher matcher = processReg.matcher(line);
-                    if (matcher.find()) {
-                        String processUid = matcher.group(1);
-                        String[] split = processUid.split("\\s");
-
-                        PackageProcess packageProcess = split.length > 1 ? processList.get(split[0]) : null;
-                        if (Objects.nonNull(packageProcess)) {
-                            line = line.replace(processUid, processUid + "/" + packageProcess.process);
-                            writer.println(line);
-                        } else {
-                            writer.println(line);
-                        }
+                    Pair<String, String> process = findProcessWithName(line);
+                    if (Objects.nonNull(process)) {
+                        line = line.replace(process.getKey(), process.getKey() + "/" + process.getValue());
+                        writer.println(line);
                     } else {
                         writer.println(line);
                     }
@@ -268,37 +303,68 @@ public class LogcatController implements Initializable {
     }
 
     private void updRunningProcesses() {
-        if (Objects.nonNull(Model.instance.getSelectedDevice())) {
+        while (true) {
+            if (Objects.nonNull(Model.instance.getSelectedDevice())) {
 
-            String result = AdbUtils.run("shell ps");
-            String[] split = result.split("\n");
+                String result;
+                String[] split;
 
-            List<PackageProcess> activeProcesses = new ArrayList<>();
-            for (int i = 1; i < split.length; i++) {
+                result = AdbUtils.run("shell ps");
+                split = result.split("\n");
 
-                PackageProcess packageProcess = new PackageProcess();
-                String[] process = split[i].split("\\s+");
-                packageProcess.process = process[process.length - 1];
-                packageProcess.PID = process[1];
+                List<PackageProcess> activeProcesses = new ArrayList<>();
+                for (int i = 1; i < split.length; i++) {
 
-                activeProcesses.add(packageProcess);
-            }
+                    PackageProcess packageProcess = new PackageProcess();
+                    String[] process = split[i].split("\\s+");
+                    packageProcess.process = process[process.length - 1];
+                    packageProcess.PID = process[1];
 
-            synchronized (modifyProcessMapMarker) {
-                for (PackageProcess process : activeProcesses) {
-                    processList.put(process.PID, process);
+                    activeProcesses.add(packageProcess);
+                }
+
+                result = AdbUtils.run("shell pm list packages");
+                split = result.split("\n");
+
+                List<String> runnablePackages = new ArrayList<>();
+                for (int i = 0; i < split.length; i++) {
+                    String packageName = split[i].replace("package:", "").trim();
+                    if (packageName.equals("android")) {
+                        continue;
+                    }
+                    for (PackageProcess process : activeProcesses) {
+                        if (process.process.equals(packageName)) {
+                            runnablePackages.add(packageName);
+                        }
+                    }
+                }
+
+                updRunnableAppsList(runnablePackages);
+
+                synchronized (modifyProcessMapMarker) {
+                    for (PackageProcess process : activeProcesses) {
+                        processList.put(process.PID, process);
+                    }
                 }
             }
-            updProcessList(processList.values());
+            try {
+                Thread.sleep(INTERVAL_DURATION);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private void updProcessList(Collection<PackageProcess> packageProcesses) {
+    private void updRunnableAppsList(List<String> packages) {
+        Collections.sort(packages, String::compareTo);
+        packages.add(0, "");
         Platform.runLater(() -> {
-            processListItems.clear();
-            for (PackageProcess pp : packageProcesses) {
-                processListItems.add(pp.process);
+            for (String p : packages) {
+                if (!runnablePackegeListItems.contains(p)) {
+                    runnablePackegeListItems.add(p);
+                }
             }
+            runnablePackegeListItems.removeIf(current -> !packages.contains(current));
         });
     }
 }

@@ -15,6 +15,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.awt.*;
@@ -23,7 +24,7 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class FXMLMainController implements WindowController, Initializable {
-    private Stage stage;
+    private static Stage stage;
 
     @FXML
     private ToggleButton btnOpenScreenShotScreen;
@@ -127,5 +128,13 @@ public class FXMLMainController implements WindowController, Initializable {
 
     public void onSaveLogFolderClicked(ActionEvent actionEvent) {
         logcatController.saveSelectedDeviceLog();
+    }
+
+    public static void showDialog(Stage dialog) {
+        Platform.runLater(() -> {
+            dialog.initModality(Modality.APPLICATION_MODAL);
+            dialog.initOwner(stage);
+            dialog.show();
+        });
     }
 }

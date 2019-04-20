@@ -13,7 +13,6 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-
 <BorderPane prefHeight="550.0" prefWidth="1100.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.FXMLMainController">
     <right>
         <StackPane>
@@ -90,6 +89,21 @@
                         <Font name="System Bold" size="15.0" />
                     </font>
                 </Label>
+                <RadioToggleButton fx:id="btnOpenLogScreen" mnemonicParsing="false" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_toggle_button" toggleGroup="$optionsGroup">
+                    <graphic>
+                        <ImageView fitHeight="48.0" fitWidth="48.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@ic_console.png" />
+                            </image>
+                        </ImageView>
+                    </graphic>
+                    <padding>
+                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
+                    </padding>
+                    <VBox.margin>
+                        <Insets top="8.0" />
+                    </VBox.margin>
+                </RadioToggleButton>
                 <Button mnemonicParsing="false" onAction="#onSaveLogFolderClicked" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_button">
                     <graphic>
                         <ImageView fx:id="btnSaveLog" fitHeight="40.0" fitWidth="40.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
@@ -108,21 +122,6 @@
                         <Insets top="8.0" />
                     </VBox.margin>
                 </Button>
-                <RadioToggleButton fx:id="btnOpenLogScreen" mnemonicParsing="false" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_toggle_button" toggleGroup="$optionsGroup">
-                    <graphic>
-                        <ImageView fitHeight="48.0" fitWidth="48.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
-                            <image>
-                                <Image url="@ic_console.png" />
-                            </image>
-                        </ImageView>
-                    </graphic>
-                    <padding>
-                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
-                    </padding>
-                    <VBox.margin>
-                        <Insets top="8.0" />
-                    </VBox.margin>
-                </RadioToggleButton>
                 <Button mnemonicParsing="false" onAction="#onOpenLogFolderClicked" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_button">
                     <graphic>
                         <ImageView fitHeight="40.0" fitWidth="40.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
