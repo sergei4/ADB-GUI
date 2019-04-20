@@ -8,28 +8,14 @@ import application.log.Logger;
 import application.model.Model;
 import application.preferences.Preferences;
 import javafx.application.Platform;
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.PixelReader;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritableImage;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
+import net.coobird.thumbnailator.Thumbnails;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -37,13 +23,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ScreenCaptureController implements Initializable {
 
@@ -115,6 +95,7 @@ public class ScreenCaptureController implements Initializable {
     public void onSaveClicked(ActionEvent actionEvent) {
         if (screenshotImage != null) {
             new Thread(() -> {
+
                 Logger.ds("Saving snapshot...");
                 String fileName = Model.instance.getSelectedDevice().getName() + " " +
                         Model.instance.getSelectedDevice().getAndroidVersion() + " " +
@@ -125,7 +106,10 @@ public class ScreenCaptureController implements Initializable {
                 File snapshotFile = new File(snapshotsFolder, fileName);
 
                 BufferedImage bImage = SwingFXUtils.fromFXImage(screenshotImage, null);
+                float ratio = 400f / bImage.getWidth();
+
                 try {
+                    bImage = Thumbnails.of(bImage).size((int) (bImage.getWidth() * ratio), (int) (bImage.getHeight() * ratio)).asBufferedImage();
                     ImageIO.write(bImage, "png", snapshotFile);
                     Logger.fs("Snapshot saved: " + snapshotFile.getAbsolutePath());
                 } catch (IOException e) {

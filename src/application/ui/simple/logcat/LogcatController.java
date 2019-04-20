@@ -15,6 +15,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 
@@ -29,6 +30,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,19 +54,26 @@ public class LogcatController implements Initializable {
 
     private static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
 
+    @FXML
     public ListView<String> listViewLog;
+    @FXML
     public Button buttonToggle;
+    @FXML
     public Button buttonClearLogCat;
+    @FXML
+    private ComboBox<String> cbProcessList;
 
     private ObservableList<String> logListItems = FXCollections.observableArrayList();
     private boolean working;
 
     private Map<String, PackageProcess> processList = new HashMap<>();
+    private ObservableList<String> processListItems = FXCollections.observableArrayList();
 
     private final Object modifyProcessMapMarker = new Object();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        cbProcessList.setItems(processListItems);
 
         listViewLog.setItems(logListItems);
         listViewLog.setCellFactory(cell -> new ListCell<String>() {
@@ -118,7 +127,7 @@ public class LogcatController implements Initializable {
         buttonToggle.setText("Stop");
 
         mainExecutor.execute(() -> {
-            String logcatCommand = AdbUtils.getAdbCommand(Model.instance.getSelectedDeviceId(), "logcat -t 12000");
+            String logcatCommand = AdbUtils.getAdbCommand(Model.instance.getSelectedDeviceId(), "logcat");
 
             Process process;
             try {
@@ -280,6 +289,16 @@ public class LogcatController implements Initializable {
                     processList.put(process.PID, process);
                 }
             }
+            updProcessList(processList.values());
         }
+    }
+
+    private void updProcessList(Collection<PackageProcess> packageProcesses) {
+        Platform.runLater(() -> {
+            processListItems.clear();
+            for (PackageProcess pp : packageProcesses) {
+                processListItems.add(pp.process);
+            }
+        });
     }
 }
