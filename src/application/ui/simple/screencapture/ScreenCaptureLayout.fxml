@@ -8,7 +8,6 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
-
 <BorderPane fx:id="pane" minHeight="400" minWidth="200" prefHeight="400.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.screencapture.ScreenCaptureController">
     <center>
         <StackPane fx:id="paneImageContainer" minHeight="0.0" minWidth="0.0" style="-fx-background-color: #ffffff;" BorderPane.alignment="CENTER">
@@ -27,6 +26,7 @@
                     <children>
                         <Button onAction="#onCreateSnapshotClicked" text="Create screenshot" />
                         <Button onAction="#onSaveClicked" text="Save to file" />
+                        <Button onAction="#onEditClicked" text="Open in editor" fx:id="btnOpenInEditor" visible="false" managed="false"/>
                     </children>
                 </HBox>
                 <Button onAction="#onOpenFolderClicked" text="Open snapshot folder" AnchorPane.rightAnchor="0.0" />

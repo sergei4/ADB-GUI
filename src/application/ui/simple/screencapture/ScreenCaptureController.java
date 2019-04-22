@@ -12,6 +12,7 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
@@ -24,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 public class ScreenCaptureController implements Initializable {
 
@@ -38,11 +40,17 @@ public class ScreenCaptureController implements Initializable {
     @FXML
     public Pane pane;
 
+    @FXML
+    private Button btnOpenInEditor;
+
     private Image screenshotImage;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-
+        if(Preferences.OS.startsWith("windows")){
+            btnOpenInEditor.setVisible(true);
+            btnOpenInEditor.setManaged(true);
+        }
     }
 
     private void updatePicture() {
@@ -92,13 +100,17 @@ public class ScreenCaptureController implements Initializable {
     }
 
     @FXML
-    public void onSaveClicked(ActionEvent actionEvent) {
+    private void onSaveClicked(ActionEvent actionEvent) {
+        saveFileImpl(s -> {
+        });
+    }
+
+    private void saveFileImpl(Consumer<File> createdFile) {
         if (screenshotImage != null) {
             new Thread(() -> {
-
                 Logger.ds("Saving snapshot...");
-                String fileName = Model.instance.getSelectedDevice().getName() + " " +
-                        Model.instance.getSelectedDevice().getAndroidVersion() + " " +
+                String fileName = Model.instance.getSelectedDevice().getName() + "_" +
+                        Model.instance.getSelectedDevice().getAndroidVersion() + "_" +
                         DateUtil.getCurrentTimeStamp() + ".png";
 
                 fileName = fileName.replace(" ", "");
@@ -111,6 +123,7 @@ public class ScreenCaptureController implements Initializable {
                 try {
                     bImage = Thumbnails.of(bImage).size((int) (bImage.getWidth() * ratio), (int) (bImage.getHeight() * ratio)).asBufferedImage();
                     ImageIO.write(bImage, "png", snapshotFile);
+                    createdFile.accept(snapshotFile);
                     Logger.fs("Snapshot saved: " + snapshotFile.getAbsolutePath());
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -118,6 +131,17 @@ public class ScreenCaptureController implements Initializable {
                 }
             }).start();
         }
+    }
+
+    @FXML
+    private void onEditClicked(ActionEvent actionEvent) {
+        saveFileImpl(file -> {
+            try {
+                Desktop.getDesktop().edit(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public void onOpenFolderClicked(ActionEvent actionEvent) {
