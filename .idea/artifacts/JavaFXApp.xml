@@ -19,6 +19,7 @@
       </element>
       <element id="directory" name="libs">
         <element id="library" level="project" name="gson-2.2.4" />
+        <element id="library" level="project" name="thumbnailator-0.4.8" />
       </element>
     </root>
   </artifact>

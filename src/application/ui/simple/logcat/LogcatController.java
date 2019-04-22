@@ -175,7 +175,6 @@ public class LogcatController implements Initializable {
     }
 
     private void addLine(String line) {
-        Logger.d(line);
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
