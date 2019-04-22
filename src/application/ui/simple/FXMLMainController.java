@@ -132,9 +132,16 @@ public class FXMLMainController implements WindowController, Initializable {
 
     public static void showDialog(Stage dialog) {
         Platform.runLater(() -> {
+            dialog.widthProperty().addListener((observable, oldValue, newValue) -> {
+                dialog.setX(stage.getX() + stage.getWidth() / 2 - dialog.getWidth() / 2);
+            });
+            dialog.heightProperty().addListener((observable, oldValue, newValue) -> {
+                dialog.setY(stage.getY() + stage.getHeight() / 2 - dialog.getHeight() / 2);
+            });
+
             dialog.initModality(Modality.APPLICATION_MODAL);
             dialog.initOwner(stage);
-            dialog.show();
+            dialog.showAndWait();
         });
     }
 }

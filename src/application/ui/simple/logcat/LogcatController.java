@@ -54,7 +54,7 @@ import java.util.regex.Pattern;
  */
 public class LogcatController implements Initializable {
 
-    private static final long INTERVAL_DURATION = 5000;
+    private static final long INTERVAL_DURATION = 3000;
 
     private boolean working;
 
@@ -113,11 +113,7 @@ public class LogcatController implements Initializable {
                 }).start();
 
                 if (Objects.nonNull(Model.instance.getSelectedDevice())) {
-                    if (working) {
-                        start();
-                    }
-                } else {
-                    stop();
+                    restart();
                 }
             }
         });
@@ -175,9 +171,9 @@ public class LogcatController implements Initializable {
     }
 
     private void addLine(String line) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
+        if (!line.isEmpty()) {
+            //Logger.d(line);
+            Platform.runLater(() -> {
                 if (!selectedProcess.equals("")) {
                     synchronized (modifyProcessMapMarker) {
                         Pair<String, String> process = findProcessWithName(line);
@@ -188,8 +184,8 @@ public class LogcatController implements Initializable {
                 } else {
                     logListItems.add(line);
                 }
-            }
-        });
+            });
+        }
     }
 
     public void onClearLocallyClicked(ActionEvent actionEvent) {
@@ -199,10 +195,14 @@ public class LogcatController implements Initializable {
     public void saveSelectedDeviceLog() {
         String deviceId = Model.instance.getSelectedDeviceId();
         if (deviceId != null) {
-            Stage dialog = ProgressDialogController.createDialog("Gathering information. Please wait...");
-            dialog.initStyle(StageStyle.UNDECORATED);
-            FXMLMainController.showDialog(dialog);
-            saveSelectedDeviceLogImpl(deviceId, s -> Platform.runLater(dialog::close));
+            if (!processList.isEmpty()) {
+                Stage dialog = ProgressDialogController.createDialog("Gathering information. Please wait...");
+                dialog.initStyle(StageStyle.UNDECORATED);
+                FXMLMainController.showDialog(dialog);
+                saveSelectedDeviceLogImpl(deviceId, s -> Platform.runLater(dialog::close));
+            } else {
+                Logger.es("Device isn't ready. Please try later.");
+            }
         }
     }
 
@@ -217,11 +217,15 @@ public class LogcatController implements Initializable {
 
     @FXML
     public void onSaveToFileClicked(ActionEvent actionEvent) {
-        new Thread(() -> {
-            final List<String> listToSave = new ArrayList<>(logListItems.size());
-            listToSave.addAll(logListItems);
-            saveLogToFile(listToSave);
-        }).start();
+        if (!processList.isEmpty()) {
+            new Thread(() -> {
+                final List<String> listToSave = new ArrayList<>(logListItems.size());
+                listToSave.addAll(logListItems);
+                saveLogToFile(listToSave);
+            }).start();
+        } else {
+            Logger.es("Device isn't ready. Please try later.");
+        }
     }
 
     private final Pattern processRegexp = Pattern.compile("\\s([\\s\\d]+)\\s");
@@ -230,8 +234,7 @@ public class LogcatController implements Initializable {
         Matcher matcher = processRegexp.matcher(logLine);
         if (matcher.find()) {
             String processUid = matcher.group(1);
-            String[] split = processUid.split("\\s");
-
+            String[] split = processUid.trim().split("\\s");
             PackageProcess packageProcess = split.length > 1 ? processList.get(split[0]) : null;
             if (Objects.nonNull(packageProcess)) {
                 return new Pair<>(processUid, packageProcess.process);
@@ -264,12 +267,14 @@ public class LogcatController implements Initializable {
 
             synchronized (modifyProcessMapMarker) {
                 for (String line : listToSave) {
-                    Pair<String, String> process = findProcessWithName(line);
-                    if (Objects.nonNull(process)) {
-                        line = line.replace(process.getKey(), process.getKey() + "/" + process.getValue());
-                        writer.println(line);
-                    } else {
-                        writer.println(line);
+                    if (!line.isEmpty()) {
+                        Pair<String, String> process = findProcessWithName(line);
+                        if (Objects.nonNull(process)) {
+                            line = line.replace(process.getKey(), process.getKey() + "/" + process.getValue());
+                            writer.println(line);
+                        } else {
+                            writer.println(line);
+                        }
                     }
                 }
             }
@@ -315,11 +320,15 @@ public class LogcatController implements Initializable {
                 for (int i = 1; i < split.length; i++) {
 
                     PackageProcess packageProcess = new PackageProcess();
-                    String[] process = split[i].split("\\s+");
-                    packageProcess.process = process[process.length - 1];
-                    packageProcess.PID = process[1];
+                    String processLine = split[i];
 
-                    activeProcesses.add(packageProcess);
+                    if (!processLine.isEmpty()) {
+                        String[] process = split[i].split("\\s+");
+                        packageProcess.process = process[process.length - 1];
+                        packageProcess.PID = process[1];
+                        //Logger.d("Pid:" + packageProcess.PID + "; process:" + packageProcess.process);
+                        activeProcesses.add(packageProcess);
+                    }
                 }
 
                 result = AdbUtils.run("shell pm list packages");
