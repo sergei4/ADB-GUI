@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<BorderPane prefHeight="550.0" prefWidth="1100.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.FXMLMainController">
+<BorderPane prefHeight="700.0" prefWidth="1100.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.FXMLMainController">
     <right>
         <StackPane>
             <fx:include fx:id="devices" source="devices/DevicesLayout.fxml" />
@@ -59,9 +59,9 @@
                     <VBox.margin>
                         <Insets top="8.0" />
                     </VBox.margin>
-                    <toggleGroup>
-                        <ToggleGroup fx:id="optionsGroup" />
-                    </toggleGroup>
+               <toggleGroup>
+                  <ToggleGroup fx:id="optionsGroup" />
+               </toggleGroup>
                 </RadioToggleButton>
                 <Button mnemonicParsing="false" onAction="#onOpenScreenshotFolderClicked" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_button">
                     <graphic>
@@ -140,7 +140,32 @@
                         <Insets top="8.0" />
                     </VBox.margin>
                 </Button>
-
+                <Label text="Device">
+                    <VBox.margin>
+                        <Insets top="24.0" />
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="15.0" />
+                    </font>
+                </Label>
+                <Button mnemonicParsing="false" onAction="#onOpenLangSettingsClicked" prefHeight="64.0" prefWidth="64.0" styleClass="main_menu_button">
+                    <graphic>
+                        <ImageView fitHeight="40.0" fitWidth="40.0" layoutY="64" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@ic_translation.png" />
+                            </image>
+                            <viewport>
+                                <Rectangle2D />
+                            </viewport>
+                        </ImageView>
+                    </graphic>
+                    <padding>
+                        <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
+                    </padding>
+                    <VBox.margin>
+                        <Insets top="8.0" />
+                    </VBox.margin>
+                </Button>
             </children>
             <padding>
                 <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
@@ -153,4 +178,7 @@
             <fx:include fx:id="screenshot" source="screencapture/ScreenCaptureLayout.fxml" />
         </StackPane>
     </center>
+   <top>
+      <VBox fx:id="menuPane" prefWidth="100.0" BorderPane.alignment="CENTER" />
+   </top>
 </BorderPane>
