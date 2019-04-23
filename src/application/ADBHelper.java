@@ -2,7 +2,10 @@ package application;
 
 import application.intentbroadcasts.IntentBroadcast;
 import application.log.Logger;
+import rx.schedulers.Schedulers;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashSet;
@@ -22,7 +25,7 @@ public class ADBHelper {
             e.printStackTrace();
         }*/
 
-        String run ="pull " + from + " " + to + "";
+        String run = "pull " + from + " " + to + "";
         String result = AdbUtils.run(run);
 
         if (!result.trim().contains("100%")) {
@@ -191,19 +194,19 @@ public class ADBHelper {
         result = AdbUtils.run("shell date " + dateString);
         Logger.d("shell date " + dateString + " ---> " + result);
 
-        if (!result.contains("bad date") && !result.contains("not permitted")){
+        if (!result.contains("bad date") && !result.contains("not permitted")) {
             result = null;
         }
 
         return result;
     }
 
-    public static Set <String> getPackages() {
+    public static Set<String> getPackages() {
         String result = AdbUtils.run("shell pm list packages");
 
         String[] split = result.split("\n");
 
-        Set <String> packages = new HashSet();
+        Set<String> packages = new HashSet();
 
         for (int i = 1; i < split.length; i++) {
             String packageName = split[i].replace("package:", "").trim();
@@ -221,5 +224,29 @@ public class ADBHelper {
         String result = AdbUtils.run("version");
 
         return result.startsWith("Android Debug Bridge");
+    }
+
+    public static rx.Observable<String> observeLogcat(String deviceId) {
+        rx.Observable<String> logcatObservable = rx.Observable.unsafeCreate(subscriber -> {
+            String logcatCommand = AdbUtils.getAdbCommand(deviceId, "logcat");
+            Process process;
+            try {
+                String[] envp = {};
+                process = Runtime.getRuntime().exec(logcatCommand, envp);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                String line = "";
+                while (!subscriber.isUnsubscribed() && (line = reader.readLine()) != null) {
+                    subscriber.onNext(line);
+                }
+                process.destroy();
+                subscriber.onCompleted();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        return logcatObservable.filter(s -> !s.isEmpty())
+                .subscribeOn(Schedulers.io());
     }
 }

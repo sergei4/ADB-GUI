@@ -1,5 +1,6 @@
 package application.ui.simple.logcat;
 
+import application.ADBHelper;
 import application.AdbUtils;
 import application.DateUtil;
 import application.Main;
@@ -25,13 +26,13 @@ import javafx.scene.control.ListView;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Pair;
+import rx.Subscriber;
+import rx.functions.Func1;
 
 import java.awt.*;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -43,8 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,11 +55,7 @@ public class LogcatController implements Initializable {
 
     private static final long INTERVAL_DURATION = 3000;
 
-    private boolean working;
-
     private String selectedProcess = "";
-
-    private static ExecutorService mainExecutor = Executors.newSingleThreadExecutor();
 
     @FXML
     public ListView<String> listViewLog;
@@ -85,7 +80,9 @@ public class LogcatController implements Initializable {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
                 selectedProcess = newValue;
-                restart();
+                if (isSubscribed()) {
+                    restart();
+                }
             }
         });
 
@@ -101,7 +98,7 @@ public class LogcatController implements Initializable {
             }
         });
 
-        toggleButtonsStates(false);
+        toggleButtons(false);
 
         Model.instance.addSelectedDeviceListener(new ModelListener() {
             @Override
@@ -112,8 +109,12 @@ public class LogcatController implements Initializable {
                     }
                 }).start();
 
-                if (Objects.nonNull(Model.instance.getSelectedDevice())) {
-                    restart();
+                if (Model.instance.getAvailableDevices().size() > 0) {
+                    if (isSubscribed()) {
+                        restart();
+                    }
+                } else {
+                    stop();
                 }
             }
         });
@@ -121,71 +122,113 @@ public class LogcatController implements Initializable {
     }
 
     public void onToggleClicked(ActionEvent actionEvent) {
-        if (working) {
+        if (isSubscribed()) {
             stop();
         } else {
-            if (Objects.nonNull(Model.instance.getSelectedDevice())) {
-                start();
-            }
-        }
-    }
-
-    private void start() {
-        toggleButtonsStates(false);
-        logListItems.clear();
-        working = true;
-        buttonToggle.setText("Stop");
-
-        mainExecutor.execute(() -> {
-            String logcatCommand = AdbUtils.getAdbCommand(Model.instance.getSelectedDeviceId(), "logcat");
-
-            Process process;
-            try {
-                String[] envp = {};
-                process = Runtime.getRuntime().exec(logcatCommand, envp);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-                String line = "";
-                while (working && (line = reader.readLine()) != null) {
-                    addLine(line);
-                }
-
-                process.destroy();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    private void stop() {
-        working = false;
-        buttonToggle.setText("Start");
-    }
-
-    private void restart() {
-        if (working) {
-            stop();
             start();
         }
     }
 
-    private void addLine(String line) {
-        if (!line.isEmpty()) {
-            //Logger.d(line);
-            Platform.runLater(() -> {
-                if (!selectedProcess.equals("")) {
-                    synchronized (modifyProcessMapMarker) {
-                        Pair<String, String> process = findProcessWithName(line);
-                        if (process != null && process.getValue().equals(selectedProcess)) {
-                            logListItems.add(line);
-                        }
-                    }
-                } else {
-                    logListItems.add(line);
-                }
-            });
+    private void start() {
+        String deviceId = Model.instance.getSelectedDeviceId();
+        if (deviceId != null) {
+            logListItems.clear();
+            toggleButtons(true);
+            subscribe(ADBHelper.observeLogcat(deviceId)
+                    .filter(getFilter())
+                    .subscribe(
+//                            s -> addLine(s),
+//                            e -> {
+//                                toggleButtons(false);
+//                                e.printStackTrace();
+//                            }
+                            new Subscriber<String>() {
+                                @Override
+                                public void onCompleted() {
+
+                                }
+
+                                @Override
+                                public void onError(Throwable throwable) {
+
+                                }
+
+                                @Override
+                                public void onNext(String s) {
+                                    if(isSubscribed()){
+                                        unsubscribe();
+                                    }
+                                }
+                            }
+                    )
+            );
         }
+    }
+
+    private Func1<String, Boolean> getFilter() {
+        if (!selectedProcess.isEmpty()) {
+            return line -> {
+                synchronized (modifyProcessMapMarker) {
+                    Pair<String, String> process = findProcessWithName(line);
+                    return Objects.nonNull(process) && process.getValue().equals(selectedProcess);
+                }
+            };
+        } else {
+            return line -> true;
+        }
+    }
+
+    private void stop() {
+        toggleButtons(false);
+        unsubscribe();
+    }
+
+    private void restart() {
+        if (isSubscribed()) {
+            stop();
+        }
+        start();
+    }
+
+    private rx.Subscription subscription;
+
+    private void subscribe(rx.Subscription subscription) {
+        this.subscription = subscription;
+    }
+
+    private boolean isSubscribed() {
+        return subscription != null && !subscription.isUnsubscribed();
+    }
+
+    private void unsubscribe() {
+        if (isSubscribed()) {
+            subscription.unsubscribe();
+        }
+    }
+
+    private void addLine(String line) {
+        Platform.runLater(() -> {
+            if (!selectedProcess.equals("")) {
+                synchronized (modifyProcessMapMarker) {
+                    Pair<String, String> process = findProcessWithName(line);
+                    if (process != null && process.getValue().equals(selectedProcess)) {
+                        logListItems.add(line);
+                    }
+                }
+            } else {
+                logListItems.add(line);
+            }
+        });
+    }
+
+    private void toggleButtons(boolean started) {
+        Platform.runLater(() -> {
+            if (started) {
+                buttonToggle.setText("Stop");
+            } else {
+                buttonToggle.setText("Start");
+            }
+        });
     }
 
     public void onClearLocallyClicked(ActionEvent actionEvent) {
@@ -300,10 +343,6 @@ public class LogcatController implements Initializable {
                 e.printStackTrace();
             }
         }
-    }
-
-    public void toggleButtonsStates(boolean exceptionState) {
-        buttonClearLogCat.setDisable(exceptionState);
     }
 
     private void updRunningProcesses() {

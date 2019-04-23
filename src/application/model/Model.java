@@ -86,6 +86,7 @@ public class Model {
         }
         if (availableDevices.size() <= 0) {
             selectedDevice = null;
+            ModelListener.notify(selectedDeviceListeners);
         }
         if (changed) {
             Logger.d("Device change detected");
