@@ -26,8 +26,8 @@ import javafx.scene.control.ListView;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Pair;
-import rx.Subscriber;
 import rx.functions.Func1;
+import rx.schedulers.JavaFxScheduler;
 
 import java.awt.*;
 import java.io.File;
@@ -48,9 +48,6 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by evgeni.shafran on 10/17/16.
- */
 public class LogcatController implements Initializable {
 
     private static final long INTERVAL_DURATION = 3000;
@@ -136,29 +133,13 @@ public class LogcatController implements Initializable {
             toggleButtons(true);
             subscribe(ADBHelper.observeLogcat(deviceId)
                     .filter(getFilter())
+                    .onBackpressureBuffer()
+                    .observeOn(JavaFxScheduler.platform())
                     .subscribe(
-//                            s -> addLine(s),
-//                            e -> {
-//                                toggleButtons(false);
-//                                e.printStackTrace();
-//                            }
-                            new Subscriber<String>() {
-                                @Override
-                                public void onCompleted() {
-
-                                }
-
-                                @Override
-                                public void onError(Throwable throwable) {
-
-                                }
-
-                                @Override
-                                public void onNext(String s) {
-                                    if(isSubscribed()){
-                                        unsubscribe();
-                                    }
-                                }
+                            s -> addLine(s),
+                            e -> {
+                                toggleButtons(false);
+                                e.printStackTrace();
                             }
                     )
             );
@@ -207,18 +188,7 @@ public class LogcatController implements Initializable {
     }
 
     private void addLine(String line) {
-        Platform.runLater(() -> {
-            if (!selectedProcess.equals("")) {
-                synchronized (modifyProcessMapMarker) {
-                    Pair<String, String> process = findProcessWithName(line);
-                    if (process != null && process.getValue().equals(selectedProcess)) {
-                        logListItems.add(line);
-                    }
-                }
-            } else {
-                logListItems.add(line);
-            }
-        });
+        logListItems.add(line);
     }
 
     private void toggleButtons(boolean started) {
