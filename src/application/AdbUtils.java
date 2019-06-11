@@ -135,7 +135,7 @@ public class AdbUtils {
                 p = Runtime.getRuntime().exec(commands, envp);
             }
 
-            p.waitFor(10, TimeUnit.SECONDS);
+            //p.waitFor(10, TimeUnit.SECONDS);
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
             boolean firstLine = true;

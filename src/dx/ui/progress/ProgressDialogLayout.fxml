@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.VBox?>
 <StackPane fx:id="pane" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="200.0" prefWidth="600.0"
            xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="application.ui.simple.progress.ProgressDialogController">
+           fx:controller="dx.ui.progress.ProgressDialogController">
     <VBox fx:id="vboxLaoding" alignment="CENTER" spacing="4.0">
         <ProgressIndicator fx:id="progressIndicator" maxWidth="50" progress="-1.0"/>
         <Label fx:id="text1" text="[?], please wait..."/>

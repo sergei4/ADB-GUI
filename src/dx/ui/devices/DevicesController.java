@@ -1,13 +1,11 @@
-package application.ui.simple.devices;
+package dx.ui.devices;
 
 import application.ADBHelper;
 import application.AdbUtils;
-import application.intentbroadcasts.IntentBroadcast;
 import application.log.Logger;
 import application.model.Device;
 import application.model.Model;
 import application.model.ModelListener;
-import application.screencapture.ScreenCaptureController;
 import application.services.DeviceMonitorService;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -25,7 +23,6 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Pane;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -56,8 +53,7 @@ public class DevicesController implements Initializable {
         listDevices.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
             public void changed(ObservableValue<? extends String> ov, String old_val, String new_val) {
                 if (listDevices.getSelectionModel().getSelectedIndex() >= 0) {
-                    Model.instance.setSelectedDevice(
-                            availableDevices.get(listDevices.getSelectionModel().getSelectedIndex()));
+                    Model.instance.setSelectedDevice(availableDevices.get(listDevices.getSelectionModel().getSelectedIndex()));
                 }
             }
         });
@@ -135,11 +131,6 @@ public class DevicesController implements Initializable {
                     Logger.fs("ADB server killed");
                 }
             });
-
-//            DialogUtil.showInfoDialog("Restarting ADB service from this tool can cause device to be 'unauthorized'\n" +
-//                    "In that case please open you favourite command line (terminal) and enter:\n" +
-//                    "adb devices\n" +
-//                    "Then press start monitoring");
         }
 
         killed = !killed;
@@ -172,18 +163,5 @@ public class DevicesController implements Initializable {
 
     private String getDeviceDescription(Device device) {
         return device.getName() + " " + device.getAndroidVersion() + " " + device.getId();
-    }
-
-
-    public void onOpenDevSettings(ActionEvent actionEvent) {
-        AdbUtils.executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                IntentBroadcast intent = new IntentBroadcast();
-                intent.activityManagerCommand = IntentBroadcast.ACTIVITY_MANAGER_COMMAND_START;
-                intent.action = "android.settings.APPLICATION_DEVELOPMENT_SETTINGS";
-                ADBHelper.sendIntent(intent);
-            }
-        });
     }
 }

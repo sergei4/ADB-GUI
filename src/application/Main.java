@@ -35,16 +35,15 @@ public class Main extends Application {
 		}
 
 		if (Preferences.getInstance().isFirstRun()) {
-
 			findADBPath();
 		}
 
 		hostService = getHostServices();
 
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("ui/simple/FXMLMain.fxml"));
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("../dx/FXMLMain.fxml"));
 		//FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLMain.fxml"));
 
-		courierFont13 =Font.loadFont(getClass().getResource("cour.ttf").toString(), 13);
+		courierFont13 = Font.loadFont(getClass().getResource("cour.ttf").toString(), 13);
 
 		Parent root = loader.load();
 		Scene scene = new Scene(root, 1200, 620);

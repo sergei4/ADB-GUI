@@ -1,4 +1,4 @@
-package application.ui.simple;
+package dx.ui.view;
 
 import javafx.scene.control.ToggleButton;
 

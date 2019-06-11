@@ -1,4 +1,4 @@
-package application.ui.simple.progress;
+package dx.ui.progress;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -23,7 +23,7 @@ public class ProgressDialogController implements Initializable {
 
     public static Stage createDialog(String progressString) {
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(ProgressDialogController.class.getResource("/application/ui/simple/progress/ProgressDialogLayout.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(ProgressDialogController.class.getResource("/dx/ui/progress/ProgressDialogLayout.fxml"));
 
             Parent root1 = fxmlLoader.load();
 

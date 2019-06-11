@@ -63,7 +63,6 @@ public class Model {
                 // not exists
                 Logger.d("Found new device: " + deviceFound.getId());
 
-
                 availableDevices.add(deviceFound);
                 changed = true;
             } else {

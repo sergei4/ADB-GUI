@@ -1,4 +1,4 @@
-package application.ui.simple.devices;
+package dx.ui.devices;
 
 public interface InstallApkListener {
     void onStartInstall();

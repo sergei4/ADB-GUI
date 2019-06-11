@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
-<BorderPane fx:id="pane" minHeight="400" minWidth="200" prefHeight="400.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.screencapture.ScreenCaptureController">
+<BorderPane fx:id="pane" minHeight="400" minWidth="200" prefHeight="400.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dx.ui.screencapture.ScreenCaptureController">
     <center>
         <StackPane fx:id="paneImageContainer" minHeight="0.0" minWidth="0.0" style="-fx-background-color: #ffffff;" BorderPane.alignment="CENTER">
             <ImageView fx:id="imageViewCapture" fitHeight="80.0" fitWidth="80.0" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">

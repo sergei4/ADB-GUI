@@ -1,14 +1,13 @@
-package application.ui.simple;
+package dx;
 
-import application.AdbUtils;
 import application.FolderUtil;
 import application.WindowController;
 import application.log.Logger;
-import application.model.Model;
 import application.preferences.Preferences;
 import application.startupcheck.StartupCheckController;
-import application.ui.simple.devices.DevicesController;
-import application.ui.simple.logcat.LogcatController;
+import dx.service.DeviceMonitorService;
+import dx.ui.devices.DevicesController;
+import dx.ui.logcat.LogcatController;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -115,7 +114,7 @@ public class FXMLMainController implements WindowController, Initializable {
         openADBValidator();
     }
 
-    private void setWindowOnTop(boolean b){
+    private void setWindowOnTop(boolean b) {
         stage.setAlwaysOnTop(b);
     }
 
@@ -166,9 +165,20 @@ public class FXMLMainController implements WindowController, Initializable {
 
     @FXML
     public void onOpenLangSettingsClicked(ActionEvent actionEvent) {
-        String deviceId = Model.instance.getSelectedDeviceId();
-        if (deviceId != null) {
-            AdbUtils.run(deviceId, "adb shell am start -n com.android.settings/.LanguageSettings");
+//        String deviceId = Model.instance.getSelectedDeviceId();
+//        if (deviceId != null) {
+//            AdbUtils.run(deviceId, "adb shell am start -n com.android.settings/.LanguageSettings");
+//        }
+        if (DeviceMonitorService.instance.isRunning()) {
+            DeviceMonitorService.instance.stop();
+        } else {
+            DeviceMonitorService.instance.start();
+            DeviceMonitorService.instance.observe()
+                    .subscribe(list -> {
+                        for (String s : list) {
+                            Logger.d(s);
+                        }
+                    });
         }
     }
 

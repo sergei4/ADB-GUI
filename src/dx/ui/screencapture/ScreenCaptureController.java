@@ -1,4 +1,4 @@
-package application.ui.simple.screencapture;
+package dx.ui.screencapture;
 
 import application.ADBHelper;
 import application.AdbUtils;

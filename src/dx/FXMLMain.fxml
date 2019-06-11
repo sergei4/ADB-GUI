@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import application.ui.simple.RadioToggleButton?>
+<?import dx.ui.view.RadioToggleButton?>
 <?import javafx.geometry.Insets?>
 <?import javafx.geometry.Rectangle2D?>
 <?import javafx.scene.control.Button?>
@@ -13,10 +13,10 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<BorderPane prefHeight="700.0" prefWidth="1100.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.ui.simple.FXMLMainController">
+<BorderPane prefHeight="700.0" prefWidth="1100.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dx.FXMLMainController">
     <right>
         <StackPane>
-            <fx:include fx:id="devices" source="devices/DevicesLayout.fxml" />
+            <fx:include fx:id="devices" source="ui/devices/DevicesLayout.fxml" />
         </StackPane>
 
     </right>
@@ -174,8 +174,8 @@
     </left>
     <center>
         <StackPane fx:id="workplace" prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-            <fx:include fx:id="logcat" source="logcat/LogcatLayout.fxml" />
-            <fx:include fx:id="screenshot" source="screencapture/ScreenCaptureLayout.fxml" />
+            <fx:include fx:id="logcat" source="ui/logcat/LogcatLayout.fxml" />
+            <fx:include fx:id="screenshot" source="ui/screencapture/ScreenCaptureLayout.fxml" />
         </StackPane>
     </center>
    <top>

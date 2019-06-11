@@ -1,4 +1,4 @@
-package application.ui.simple.logcat;
+package dx.ui.logcat;
 
 import application.ADBHelper;
 import application.AdbUtils;
@@ -9,8 +9,8 @@ import application.model.Model;
 import application.model.ModelListener;
 import application.model.PackageProcess;
 import application.preferences.Preferences;
-import application.ui.simple.FXMLMainController;
-import application.ui.simple.progress.ProgressDialogController;
+import dx.FXMLMainController;
+import dx.ui.progress.ProgressDialogController;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
