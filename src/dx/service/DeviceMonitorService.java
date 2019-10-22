@@ -20,13 +20,12 @@ public class DeviceMonitorService implements Service {
     private ConnectableObservable<List<String>> deviceObserver;
     private rx.Subscription subscription;
 
-    private Set<DeviceMonitorService.Listener> listeners = new HashSet<>();
+    private Set<Service.Listener> listeners = new HashSet<>();
 
     private DeviceMonitorService() {
         adbDeviceObserver = Observable.<String>unsafeCreate(
                 s -> {
                     String result = AdbUtils.run("devices -l");
-                    //Logger.d(result);
                     String[] split = result.split("\n");
                     for (String line : split) {
                         s.onNext(line);
@@ -55,7 +54,7 @@ public class DeviceMonitorService implements Service {
                     .flatMap(emitter -> adbDeviceObserver.toList())
                     .publish();
             subscription = deviceObserver.connect();
-            for (DeviceMonitorService.Listener l : listeners) {
+            for (Service.Listener l : listeners) {
                 l.onStart();
             }
         } else {
@@ -67,7 +66,7 @@ public class DeviceMonitorService implements Service {
     public void stop() {
         if (isRunning()) {
             subscription.unsubscribe();
-            for (DeviceMonitorService.Listener l : listeners) {
+            for (Service.Listener l : listeners) {
                 l.onStop();
             }
             Logger.d("Someone stopped me!!!");

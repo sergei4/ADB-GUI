@@ -118,8 +118,6 @@ public class FXMLMainController implements WindowController, Initializable {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-
-
                 try {
                     StartupCheckController.showScreen(getClass());
                 } catch (IOException e) {

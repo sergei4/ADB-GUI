@@ -58,8 +58,8 @@ public class FXMLMainController implements WindowController, Initializable {
     public void setStageAndSetupListeners(Stage stage) {
         FXMLMainController.stage = stage;
 
-        stage.setWidth(1200);
-        stage.setHeight(700);
+        stage.setWidth(1400);
+        stage.setHeight(800);
 
         stage.setMinWidth(1200);
         stage.setMinHeight(700);
@@ -119,8 +119,10 @@ public class FXMLMainController implements WindowController, Initializable {
     }
 
     protected void log(Color color, String message) {
-        appLogText.setTextFill(color);
-        appLogText.setText(message);
+        Platform.runLater(() -> {
+            appLogText.setTextFill(color);
+            appLogText.setText(message);
+        });
     }
 
     private void openADBValidator() {

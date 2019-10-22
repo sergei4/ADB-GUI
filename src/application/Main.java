@@ -26,6 +26,7 @@ public class Main extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		System.out.println(System.getProperty("user.dir"));
 
 		DeviceMonitorService.instance.startMonitoringDevices();
 
@@ -51,14 +52,6 @@ public class Main extends Application {
 		Image iconImage = new Image("/res/devexperts_logo.png");
 		primaryStage.getIcons().add(iconImage);
 
-		try {
-		/*	URL iconURL = Main.class.getResource("/res/icon.png");
-			java.awt.Image image = new ImageIcon(iconURL).getImage();
-			com.apple.eawt.Application.getApplication().setDockIconImage(image);*/
-		} catch (Exception e) {
-			// Won't work on Windows or Linux.
-		}
-
 		primaryStage.setTitle("ADB GUI Tool");
 		primaryStage.setScene(scene);
 
@@ -77,11 +70,14 @@ public class Main extends Application {
 			}
 		});
 
+		//Todo: remove
 		if (FolderUtil.getSnapshotFolder().getAbsolutePath().contains(" ")){
 			DialogUtil.showErrorDialog("This app do not support operating from a path with spaces,\n" +
 					"please move the app and start again");
 			System.exit(0);
 		}
+
+		System.out.println(System.getProperty("user.dir"));
 	}
 
 	private void findADBPath() {
