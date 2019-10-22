@@ -1,11 +1,24 @@
 package dx;
 
+import application.AdbInstallLocationProvider;
+import application.AdbUtils;
 import dx.model.Device;
 import dx.model.DeviceRegistry;
 import dx.service.DeviceMonitorService;
+import org.junit.Before;
 import org.junit.Test;
 
 public class DeviceMonitorServiceTest {
+
+    @Before
+    public void before() {
+        AdbUtils.setAdbInstallLocationProvider(new AdbInstallLocationProvider() {
+            @Override
+            public String getAdbInstallLocatoin() {
+                return "/Users/eremkin/Library/Android/sdk/platform-tools/";
+            }
+        });
+    }
 
     @Test
     public void observeDeviceTest() throws Exception {

@@ -4,20 +4,15 @@ import application.log.Logger;
 import application.model.Command;
 import application.model.CommandBatch;
 import application.model.Model;
-import application.preferences.Preferences;
 import javafx.application.Platform;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 public class AdbUtils {
+    private static AdbInstallLocationProvider adbInstallLocationProvider;
+
     //public static ExecutorService executor = Executors.newSingleThreadExecutor();
     public static ExecutorService executor = Executors.newScheduledThreadPool(2);
     public static ExecutorService executorTimeout = Executors.newScheduledThreadPool(2);
@@ -48,6 +43,9 @@ public class AdbUtils {
         return null;
     }
 
+    public static void setAdbInstallLocationProvider(AdbInstallLocationProvider provider) {
+        adbInstallLocationProvider = provider;
+    }
 
     public static String run(CommandBatch batch) {
         String result = "";
@@ -72,15 +70,17 @@ public class AdbUtils {
             command = command.replaceFirst("adb", "");
         }
 
-        return Preferences.getInstance().getAdbInstallLocatoin() + "adb "
+        return adbInstallLocationProvider.getAdbInstallLocatoin() + "adb "
                 + (deviceId != null ? "-s " + deviceId + " " : "")
                 + command;
     }
 
+    @Deprecated
     public interface ADBRunListener {
         void onFinish(String resporse);
     }
 
+    @Deprecated
     public static void runAsync(String string, ADBRunListener listener) {
         executor.execute(new Runnable() {
 
@@ -161,16 +161,11 @@ public class AdbUtils {
             }
 
         } catch (Exception e) {
+            Logger.e("Run command: " + command);
             e.printStackTrace();
             output.append(e.getMessage());
         }
 
-        String result = output.toString();
-
-        if (false) {
-            Logger.d("Run: " + command + "\n" + result);
-        }
-
-        return result;
+        return output.toString();
     }
 }

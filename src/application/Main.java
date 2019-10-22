@@ -39,6 +39,8 @@ public class Main extends Application {
 			findADBPath();
 		}
 
+		AdbUtils.setAdbInstallLocationProvider(Preferences.getInstance());
+
 		hostService = getHostServices();
 
 		FXMLLoader loader = new FXMLLoader(getClass().getResource("../dx/FXMLMain.fxml"));
@@ -78,6 +80,7 @@ public class Main extends Application {
 		}
 
 		System.out.println(System.getProperty("user.dir"));
+
 	}
 
 	private void findADBPath() {

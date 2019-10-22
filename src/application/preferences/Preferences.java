@@ -1,231 +1,233 @@
 package application.preferences;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-
+import application.AdbInstallLocationProvider;
 import application.DateUtil;
 import application.FileUtils;
 import application.log.Logger;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-public class Preferences {
+import java.io.File;
+import java.io.IOException;
 
-	public static final String OS = System.getProperty("os.name").toLowerCase();
-	private static Preferences instance;
-	private PreferenceObj preferenceObj;
-	private File appFolder = new File("appData" + File.separator);
-	private File preferenceFile = new File(appFolder, "preferences");
-	private File apksFolder = new File(appFolder, "apks" + File.separator);
-	private File screenshotsFolder = new File(appFolder, "screenshots" + File.separator);
-	private File appLogsFolder = new File(appFolder, "app-logs" + File.separator);
-	private File logcatFolder = new File(appFolder, "logcat-logs" + File.separator);
-	private File commandsFolder = new File(appFolder, "commands" + File.separator);
-	private File intentsFolder = new File(appFolder, "intents" + File.separator);
+public class Preferences implements AdbInstallLocationProvider {
 
-	private Preferences() {
+    public static final String OS = System.getProperty("os.name").toLowerCase();
+    private static Preferences instance;
+    private PreferenceObj preferenceObj;
+    private File appFolder = new File("appData" + File.separator);
+    private File preferenceFile = new File(appFolder, "preferences");
+    private File apksFolder = new File(appFolder, "apks" + File.separator);
+    private File screenshotsFolder = new File(appFolder, "screenshots" + File.separator);
+    private File appLogsFolder = new File(appFolder, "app-logs" + File.separator);
+    private File logcatFolder = new File(appFolder, "logcat-logs" + File.separator);
+    private File commandsFolder = new File(appFolder, "commands" + File.separator);
+    private File intentsFolder = new File(appFolder, "intents" + File.separator);
 
-		if (!appFolder.exists()){
-			appFolder.mkdirs();
-		}
+    private Preferences() {
 
-		if (!preferenceFile.exists()){
-			createDefaultPreferences();
-		} else {
-			Gson gson = new Gson();
-			try {
-				preferenceObj = gson.fromJson(FileUtils.readFile(preferenceFile.getAbsolutePath()), PreferenceObj.class);
-			} catch (JsonSyntaxException | IOException e) {
-				e.printStackTrace();
-				preferenceObj = new PreferenceObj();
-				Logger.e("Unable to load prefs will work with defaults");
-			}
-		}
+        if (!appFolder.exists()) {
+            appFolder.mkdirs();
+        }
 
-	}
+        if (!preferenceFile.exists()) {
+            createDefaultPreferences();
+        } else {
+            Gson gson = new Gson();
+            try {
+                preferenceObj = gson.fromJson(FileUtils.readFile(preferenceFile.getAbsolutePath()), PreferenceObj.class);
+            } catch (JsonSyntaxException | IOException e) {
+                e.printStackTrace();
+                preferenceObj = new PreferenceObj();
+                Logger.e("Unable to load prefs will work with defaults");
+            }
+        }
 
-	public File getCommandFolder() {
-		if (!commandsFolder.exists()) {
-			boolean folderCreated = commandsFolder.mkdir();
+    }
 
-			Logger.d("No commands folder, folder created: " + folderCreated);
-		}
+    public File getCommandFolder() {
+        if (!commandsFolder.exists()) {
+            boolean folderCreated = commandsFolder.mkdir();
 
-		return commandsFolder;
-	}
+            Logger.d("No commands folder, folder created: " + folderCreated);
+        }
 
-	public File getIntentsFolder() {
-		if (!intentsFolder.exists()) {
-			boolean folderCreated = intentsFolder.mkdir();
+        return commandsFolder;
+    }
 
-			Logger.d("No intents folder, folder created: " + folderCreated);
-		}
+    public File getIntentsFolder() {
+        if (!intentsFolder.exists()) {
+            boolean folderCreated = intentsFolder.mkdir();
 
-		return intentsFolder;
-	}
+            Logger.d("No intents folder, folder created: " + folderCreated);
+        }
 
-	private void createDefaultPreferences() {
+        return intentsFolder;
+    }
 
-		try {
-			preferenceObj = new PreferenceObj();
-			save();
-		} catch (IOException e) {
-			Logger.e("Unable to create / locate pref file will work from defaults");
-			e.printStackTrace();
-		}
-	}
+    private void createDefaultPreferences() {
 
-	public static Preferences getInstance(){
-		if (instance == null){
-			instance = new Preferences();
-		}
+        try {
+            preferenceObj = new PreferenceObj();
+            save();
+        } catch (IOException e) {
+            Logger.e("Unable to create / locate pref file will work from defaults");
+            e.printStackTrace();
+        }
+    }
 
-		return instance;
-	}
+    public static Preferences getInstance() {
+        if (instance == null) {
+            instance = new Preferences();
+        }
 
-	public String getAdbInstallLocatoin() {
-		String installedLocation = preferenceObj.adbPath;
+        return instance;
+    }
 
-		if (installedLocation != null) {
+    public String getAdbInstallLocatoin() {
+        String installedLocation = preferenceObj.adbPath;
 
-			// we will adjust the adb command ourselves
-			if (installedLocation.endsWith(File.separator + "adb")) {
-				installedLocation = installedLocation.substring(0, installedLocation.lastIndexOf(File.separator));
-			}
+        if (installedLocation != null) {
 
-			if (installedLocation.trim().length() > 0 && !installedLocation.endsWith(File.separator)){
-				installedLocation += File.separator;
-			}
-		}
+            // we will adjust the adb command ourselves
+            if (installedLocation.endsWith(File.separator + "adb")) {
+                installedLocation = installedLocation.substring(0, installedLocation.lastIndexOf(File.separator));
+            }
 
-		return installedLocation;
-	}
+            if (installedLocation.trim().length() > 0 && !installedLocation.endsWith(File.separator)) {
+                installedLocation += File.separator;
+            }
+        }
 
-	public File getLogFile() {
-		File logFolder = appLogsFolder;
-		if (!logFolder.exists()){
-			logFolder.mkdir();
-		}
+        return installedLocation;
+    }
 
-		return new File (logFolder, "log_" + DateUtil.getCurrentTimeStamp() + ".txt");
-	}
+    public File getLogFile() {
+        File logFolder = appLogsFolder;
+        if (!logFolder.exists()) {
+            logFolder.mkdir();
+        }
 
-	public File getLogFileErr() {
-		File logFolder = appLogsFolder;
-		if (!logFolder.exists()){
-			logFolder.mkdir();
-		}
+        return new File(logFolder, "log_" + DateUtil.getCurrentTimeStamp() + ".txt");
+    }
 
-		return new File (logFolder, "log_" + DateUtil.getCurrentTimeStamp() + "_e.txt");
-	}
+    public File getLogFileErr() {
+        File logFolder = appLogsFolder;
+        if (!logFolder.exists()) {
+            logFolder.mkdir();
+        }
 
-	public boolean isDebug() {
-		return preferenceObj.debug;
-	}
+        return new File(logFolder, "log_" + DateUtil.getCurrentTimeStamp() + "_e.txt");
+    }
 
-	public File getLogcatFolder() {
-		File logFolder = logcatFolder;
-		if (!logFolder.exists()){
-			logFolder.mkdir();
-		}
-		return logFolder;
-	}
+    public boolean isDebug() {
+        return preferenceObj.debug;
+    }
 
-	public void setEditWindowIsOpen(boolean isEditWindowOpen) {
-		preferenceObj.isEditWindowOpen = isEditWindowOpen;
-		try {
-			save();
-		} catch (IOException e) {}
-	}
+    public File getLogcatFolder() {
+        File logFolder = logcatFolder;
+        if (!logFolder.exists()) {
+            logFolder.mkdir();
+        }
+        return logFolder;
+    }
 
-	public boolean isEditWindowIsOpen(){
-		return preferenceObj.isEditWindowOpen;
-	}
+    public void setEditWindowIsOpen(boolean isEditWindowOpen) {
+        preferenceObj.isEditWindowOpen = isEditWindowOpen;
+        try {
+            save();
+        } catch (IOException e) {
+        }
+    }
 
-	public void setWindowIsAlwaysOn(boolean windowIsAlwaysOn) {
-		preferenceObj.windowIsAlwaysOn = windowIsAlwaysOn;
+    public boolean isEditWindowIsOpen() {
+        return preferenceObj.isEditWindowOpen;
+    }
 
-		try {
-			save();
-		} catch (IOException e) {}
-	}
+    public void setWindowIsAlwaysOn(boolean windowIsAlwaysOn) {
+        preferenceObj.windowIsAlwaysOn = windowIsAlwaysOn;
 
-	public boolean isWindowIsAlwaysOn(){
-		return preferenceObj.windowIsAlwaysOn;
-	}
+        try {
+            save();
+        } catch (IOException e) {
+        }
+    }
 
-	static class PreferenceObj{
-		String adbPath = "";
-	    boolean firstRun = true;
-		public String apksFolders = "";
-		public String obfuscationToolPath;
-		public boolean debug = false;
-		public boolean isEditWindowOpen = true;
-		public boolean windowIsAlwaysOn;
-	}
+    public boolean isWindowIsAlwaysOn() {
+        return preferenceObj.windowIsAlwaysOn;
+    }
 
-	public void setAdbPath(String adbPath){
-		preferenceObj.adbPath = adbPath;
-	}
+    static class PreferenceObj {
+        String adbPath = "";
+        boolean firstRun = true;
+        public String apksFolders = "";
+        public String obfuscationToolPath;
+        public boolean debug = false;
+        public boolean isEditWindowOpen = true;
+        public boolean windowIsAlwaysOn;
+    }
 
-	public void save() throws IOException{
-		Gson gson = new Gson();
-		preferenceFile.delete();
-		FileUtils.writeToFile(preferenceFile.getPath(), gson.toJson(preferenceObj));
-	}
+    public void setAdbPath(String adbPath) {
+        preferenceObj.adbPath = adbPath;
+    }
 
-	public String getAdbPath() {
-		return preferenceObj.adbPath;
-	}
+    public void save() throws IOException {
+        Gson gson = new Gson();
+        preferenceFile.delete();
+        FileUtils.writeToFile(preferenceFile.getPath(), gson.toJson(preferenceObj));
+    }
 
-	public boolean isFirstRun() {
-		return preferenceObj.firstRun ;
-	}
+    public String getAdbPath() {
+        return preferenceObj.adbPath;
+    }
 
-	public void setFirstRun(boolean firstRun) {
-		preferenceObj.firstRun = firstRun;
-	}
+    public boolean isFirstRun() {
+        return preferenceObj.firstRun;
+    }
 
-	public String getPrimaryAPKFolder() {
-		return apksFolder.getAbsolutePath();
-	}
+    public void setFirstRun(boolean firstRun) {
+        preferenceObj.firstRun = firstRun;
+    }
 
-	public String[] getAPKsFolders() {
-		String [] additionslPathes = preferenceObj.apksFolders.split(";");
+    public String getPrimaryAPKFolder() {
+        return apksFolder.getAbsolutePath();
+    }
 
-		String[] apksFolders = new String [additionslPathes.length + 1];
+    public String[] getAPKsFolders() {
+        String[] additionslPathes = preferenceObj.apksFolders.split(";");
 
-		apksFolders[0] = getPrimaryAPKFolder();
+        String[] apksFolders = new String[additionslPathes.length + 1];
 
-		for (int i = 0; i < additionslPathes.length; i++){
-			apksFolders[i + 1] = additionslPathes[i];
-		}
+        apksFolders[0] = getPrimaryAPKFolder();
 
-		return apksFolders ;
-	}
+        for (int i = 0; i < additionslPathes.length; i++) {
+            apksFolders[i + 1] = additionslPathes[i];
+        }
 
-	public void setAPKsFoldersPlain(String text) {
-		preferenceObj.apksFolders = text;
-	}
+        return apksFolders;
+    }
 
-	public String getAPKsFoldersPlain() {
-		return preferenceObj.apksFolders ;
-	}
+    public void setAPKsFoldersPlain(String text) {
+        preferenceObj.apksFolders = text;
+    }
 
-	public String getObfuscationToolPath() {
-		return preferenceObj.obfuscationToolPath;
-	}
+    public String getAPKsFoldersPlain() {
+        return preferenceObj.apksFolders;
+    }
 
-	public void setObfuscationToolPath(String text) {
-		preferenceObj.obfuscationToolPath = text;
-	}
+    public String getObfuscationToolPath() {
+        return preferenceObj.obfuscationToolPath;
+    }
 
-	public String getSnapshotFolder() {
-		return screenshotsFolder.getAbsolutePath();
-	}
+    public void setObfuscationToolPath(String text) {
+        preferenceObj.obfuscationToolPath = text;
+    }
 
-	public File getAppFolder() {
-		return appFolder;
-	}
+    public String getSnapshotFolder() {
+        return screenshotsFolder.getAbsolutePath();
+    }
+
+    public File getAppFolder() {
+        return appFolder;
+    }
 }
