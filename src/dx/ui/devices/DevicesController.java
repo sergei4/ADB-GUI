@@ -1,14 +1,10 @@
 package dx.ui.devices;
 
 import application.ADBHelper;
-import application.AdbUtils;
 import application.log.Logger;
-import application.model.Device;
-import application.model.Model;
-import application.model.ModelListener;
-import application.services.DeviceMonitorService;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import dx.model.Device;
+import dx.model.DeviceRegistry;
+import dx.service.DeviceMonitorService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -21,10 +17,10 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Pane;
+import rx.schedulers.JavaFxScheduler;
 
 import java.io.File;
 import java.net.URL;
-import java.util.List;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,28 +40,30 @@ public class DevicesController implements Initializable {
 
     private ObservableList<String> devicesListItems = FXCollections.observableArrayList();
 
-    private List<Device> availableDevices;
+    private DeviceRegistry deviceRegistry;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         listDevices.setItems(devicesListItems);
 
-        listDevices.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
-            public void changed(ObservableValue<? extends String> ov, String old_val, String new_val) {
-                if (listDevices.getSelectionModel().getSelectedIndex() >= 0) {
-                    Model.instance.setSelectedDevice(availableDevices.get(listDevices.getSelectionModel().getSelectedIndex()));
-                }
-            }
-        });
+//        listDevices.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
+//            public void changed(ObservableValue<? extends String> ov, String old_val, String new_val) {
+//                if (listDevices.getSelectionModel().getSelectedIndex() >= 0) {
+//                    Model.instance.setSelectedDevice(availableDevices.get(listDevices.getSelectionModel().getSelectedIndex()));
+//                }
+//            }
+//        });
 
-        Model.instance.addModelListener(new ModelListener() {
-            @Override
-            public void onChangeModelListener() {
-                refreshDevices();
-            }
-        });
+        deviceRegistry = new DeviceRegistry(DeviceMonitorService.instance);
 
-        refreshDevices();
+        deviceRegistry.observeDeviceList()
+                .observeOn(JavaFxScheduler.platform())
+                .subscribe(devices -> {
+                    devicesListItems.clear();
+                    for (Device device : devices) {
+                        devicesListItems.add(getDeviceDescription(device));
+                    }
+                });
 
         cfgDragAndDropEvent();
     }
@@ -97,7 +95,7 @@ public class DevicesController implements Initializable {
                             Pattern causeRegExpr = Pattern.compile("Failure (.*)");
                             Matcher matcher = causeRegExpr.matcher(result);
                             String cause = "";
-                            if(matcher.find()){
+                            if (matcher.find()) {
                                 cause = matcher.group(1);
                             }
                             Logger.es("Failed installation: " + cause);
@@ -113,55 +111,55 @@ public class DevicesController implements Initializable {
 
     @FXML
     private void handleToggleADBClicked(ActionEvent event) {
-
-        devicesListItems.clear();
-
-        if (killed) {
-            DeviceMonitorService.instance.startMonitoringDevices();
-            buttonADBToggle.setText("Kill");
-            Logger.fs("ADB server started");
-        } else {
-            buttonADBToggle.setText("Start monitoring");
-            DeviceMonitorService.instance.stopMonitoringDevices();
-            AdbUtils.executor.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    Logger.d(ADBHelper.killServer());
-                    Logger.fs("ADB server killed");
-                }
-            });
-        }
-
-        killed = !killed;
+//
+//        devicesListItems.clear();
+//
+//        if (killed) {
+//            DeviceMonitorService.instance.startMonitoringDevices();
+//            buttonADBToggle.setText("Kill");
+//            Logger.fs("ADB server started");
+//        } else {
+//            buttonADBToggle.setText("Start monitoring");
+//            DeviceMonitorService.instance.stopMonitoringDevices();
+//            AdbUtils.executor.execute(new Runnable() {
+//
+//                @Override
+//                public void run() {
+//                    Logger.d(ADBHelper.killServer());
+//                    Logger.fs("ADB server killed");
+//                }
+//            });
+//        }
+//
+//        killed = !killed;
     }
 
-    private void refreshDevices() {
-
-        Device selectedDevice = Model.instance.getSelectedDevice();
-
-        int i = 0;
-
-        devicesListItems.clear();
-        availableDevices = Model.instance.getAvailableDevices();
-        boolean setSelected = false;
-        for (Device device : availableDevices) {
-            devicesListItems.add(getDeviceDescription(device));
-
-            if (selectedDevice != null && device.getId().equals(selectedDevice.getId())) {
-                listDevices.getSelectionModel().select(i);
-                setSelected = true;
-            }
-
-            i++;
-        }
-
-        if (!setSelected && devicesListItems.size() > 0) {
-            listDevices.getSelectionModel().select(0);
-        }
-    }
+//    private void refreshDevices() {
+//
+//        Device selectedDevice = Model.instance.getSelectedDevice();
+//
+//        int i = 0;
+//
+//        devicesListItems.clear();
+//        availableDevices = Model.instance.getAvailableDevices();
+//        boolean setSelected = false;
+//        for (Device device : availableDevices) {
+//            devicesListItems.add(getDeviceDescription(device));
+//
+//            if (selectedDevice != null && device.getId().equals(selectedDevice.getId())) {
+//                listDevices.getSelectionModel().select(i);
+//                setSelected = true;
+//            }
+//
+//            i++;
+//        }
+//
+//        if (!setSelected && devicesListItems.size() > 0) {
+//            listDevices.getSelectionModel().select(0);
+//        }
+//    }
 
     private String getDeviceDescription(Device device) {
-        return device.getName() + " " + device.getAndroidVersion() + " " + device.getId();
+        return device.getModel() + ": " + device.getAndroidApiName() + " (" + device.getId() + ")" + (device.isConnected() ? "+" : "-");
     }
 }

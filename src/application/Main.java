@@ -28,8 +28,6 @@ public class Main extends Application {
 	public void start(Stage primaryStage) throws Exception {
 		System.out.println(System.getProperty("user.dir"));
 
-		DeviceMonitorService.instance.startMonitoringDevices();
-
 		if (Preferences.getInstance().isDebug()) {
 			System.setOut(new PrintStream(Preferences.getInstance().getLogFile()));
 			System.setErr(new PrintStream(Preferences.getInstance().getLogFileErr()));
@@ -40,6 +38,7 @@ public class Main extends Application {
 		}
 
 		AdbUtils.setAdbInstallLocationProvider(Preferences.getInstance());
+		DeviceMonitorService.instance.startMonitoringDevices();
 
 		hostService = getHostServices();
 

@@ -3,12 +3,16 @@ package application;
 import application.log.Logger;
 import application.model.Command;
 import application.model.CommandBatch;
-import application.model.Model;
-import javafx.application.Platform;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class AdbUtils {
     private static AdbInstallLocationProvider adbInstallLocationProvider;
@@ -58,7 +62,7 @@ public class AdbUtils {
     }
 
     private static String executeADBCommand(String command) {
-        return executeCommand(getAdbCommand(Model.instance.getSelectedDeviceId(), command));
+        return executeCommand(getAdbCommand(null, command));
     }
 
     private static String executeADBCommand(String deviceId, String command) {
@@ -73,31 +77,6 @@ public class AdbUtils {
         return adbInstallLocationProvider.getAdbInstallLocatoin() + "adb "
                 + (deviceId != null ? "-s " + deviceId + " " : "")
                 + command;
-    }
-
-    @Deprecated
-    public interface ADBRunListener {
-        void onFinish(String resporse);
-    }
-
-    @Deprecated
-    public static void runAsync(String string, ADBRunListener listener) {
-        executor.execute(new Runnable() {
-
-            @Override
-            public void run() {
-                String resporse = executeADBCommand(string);
-
-                if (listener != null) {
-                    Platform.runLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            listener.onFinish(resporse);
-                        }
-                    });
-                }
-            }
-        });
     }
 
     public static String run(Command command) {

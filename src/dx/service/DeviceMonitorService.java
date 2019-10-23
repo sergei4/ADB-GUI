@@ -49,7 +49,7 @@ public class DeviceMonitorService implements Service {
     @Override
     public void start() {
         if (!isRunning()) {
-            Logger.d("Start service");
+            Logger.d("Start device monitor service");
             deviceObserver = rx.Observable.interval(1, TimeUnit.SECONDS)
                     .flatMap(emitter -> adbDeviceObserver.toList())
                     .publish();
@@ -58,7 +58,7 @@ public class DeviceMonitorService implements Service {
                 l.onStart();
             }
         } else {
-            Logger.d("Service is already running");
+            Logger.d("Device monitor service is already running");
         }
     }
 

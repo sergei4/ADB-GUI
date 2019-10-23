@@ -3,6 +3,7 @@ package application.startupcheck;
 import application.ADBHelper;
 import application.log.Logger;
 import application.preferences.Preferences;
+import dx.service.DeviceMonitorService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -45,18 +46,17 @@ public class StartupCheckController implements Initializable {
             public void run() {
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
                 boolean adbExists = ADBHelper.isADBFound();
-
-                Logger.d("Is adb found: " + Preferences.getInstance().getAdbPath());
 
                 if (!adbExists) {
                     if (tryToFindADB()) {
                         adbExists = ADBHelper.isADBFound();
-
                         Logger.d("Is adb found after auto search: " + adbExists);
                     }
+                } else {
+                    Logger.d("Is adb found: " + Preferences.getInstance().getAdbPath());
                 }
 
                 boolean finalAdbExists = adbExists;
@@ -65,6 +65,7 @@ public class StartupCheckController implements Initializable {
                     public void run() {
                         if (finalAdbExists) {
                             stage.close();
+                            DeviceMonitorService.instance.start();
                         } else {
                             vboxLaoding.setVisible(false);
                             vboxLaoding.setManaged(false);
@@ -104,17 +105,15 @@ public class StartupCheckController implements Initializable {
                 }
             }
         }
-
         return false;
     }
 
     private void setStage(Stage stage, Scene scene) {
-
         this.stage = stage;
         this.scene = scene;
     }
 
-    public static void showScreen(Class class1) throws IOException{
+    public static void showScreen(Class class1) throws IOException {
         showScreen(class1, null);
     }
 
@@ -142,7 +141,7 @@ public class StartupCheckController implements Initializable {
         Preferences.getInstance().setAdbPath(textFieldADBPath.getText());
         try {
             Preferences.getInstance().save();
-        } catch (IOException e) {
+        } catch (IOException ignored) {
         }
 
         labelStatus.setText("Checking path...");
@@ -158,7 +157,7 @@ public class StartupCheckController implements Initializable {
                         if (adbExists) {
                             labelStatus.setText("ADB found! Go on and have some fun!");
                             labelStatus.setTextFill(Color.GREEN);
-
+                            DeviceMonitorService.instance.start();
                         } else {
                             labelStatus.setText("No ADB found... Try different path");
                             labelStatus.setTextFill(Color.RED);

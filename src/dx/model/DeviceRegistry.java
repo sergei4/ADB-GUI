@@ -32,6 +32,7 @@ public class DeviceRegistry {
             @Override
             public void onStop() {
                 setDevicesDisconnected();
+                deviceListSbj.onNext(deviceList.values());
             }
         });
         if (deviceMonitorService.isRunning()) {
