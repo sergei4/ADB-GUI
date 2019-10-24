@@ -124,15 +124,6 @@ public class Preferences implements AdbInstallLocationProvider {
         return preferenceObj.debug;
     }
 
-    @Deprecated
-    public File getLogcatFolder() {
-        File logFolder = logcatFolder;
-        if (!logFolder.exists()) {
-            logFolder.mkdir();
-        }
-        return logFolder;
-    }
-
     public void setEditWindowIsOpen(boolean isEditWindowOpen) {
         preferenceObj.isEditWindowOpen = isEditWindowOpen;
         try {

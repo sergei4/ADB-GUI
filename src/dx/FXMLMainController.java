@@ -155,7 +155,7 @@ public class FXMLMainController implements WindowController, Initializable {
     public void onOpenLogFolderClicked(ActionEvent actionEvent) {
         if (Desktop.isDesktopSupported()) {
             try {
-                Desktop.getDesktop().open(Preferences.getInstance().getLogcatFolder());
+                Desktop.getDesktop().open(FolderUtil.getLogsFolder());
             } catch (IOException e) {
                 e.printStackTrace();
             }

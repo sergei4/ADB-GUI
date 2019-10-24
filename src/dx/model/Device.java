@@ -7,6 +7,7 @@ import rx.Observable;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,10 +21,10 @@ public class Device {
 
     private boolean isEmulator;
 
-    private boolean isConnected;
-
     private String androidApi;
     private String androidApiName = "indefinite";
+
+    private boolean isConnected;
 
     private final Map<String, DeviceProcess> processList = new ConcurrentHashMap<>();
 
@@ -90,6 +91,10 @@ public class Device {
                 updProcessSubscription.unsubscribe();
             }
         }
+    }
+
+    public Collection<DeviceProcess> getProcessList() {
+        return processList.values();
     }
 
     public static Device fromAdbLine(String adbLine) {
@@ -175,6 +180,13 @@ public class Device {
     @Override
     public String toString() {
         return String.format("Id: %s, Model: %s, api: %s, connected: %s", id, model, androidApiName, isConnected);
+    }
+
+    public void copyProperties(Device device){
+        model = device.model;
+        isEmulator = device.isEmulator;
+        androidApi = device.androidApi;
+        androidApiName = device.androidApiName;
     }
 
     @Override

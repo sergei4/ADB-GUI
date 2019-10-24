@@ -37,8 +37,6 @@ public class DevicesController implements Initializable {
 
     private List<Listener> listeners = new ArrayList<>();
 
-    private boolean killed = false;
-
     @FXML
     private ListView<Device> listDevices;
 
@@ -98,7 +96,8 @@ public class DevicesController implements Initializable {
         if (index == -1) {
             devicesListItems.add(device);
         } else {
-            devicesListItems.set(index, device);
+            //devicesListItems.set(index, device);
+            listDevices.refresh();
         }
         if (listDevices.getSelectionModel().getSelectedItem() == null) {
             listDevices.getSelectionModel().selectFirst();
@@ -151,51 +150,6 @@ public class DevicesController implements Initializable {
 
     @FXML
     private void handleToggleADBClicked(ActionEvent event) {
-//
-//        devicesListItems.clear();
-//
-//        if (killed) {
-//            DeviceMonitorService.instance.startMonitoringDevices();
-//            buttonADBToggle.setText("Kill");
-//            Logger.fs("ADB server started");
-//        } else {
-//            buttonADBToggle.setText("Start monitoring");
-//            DeviceMonitorService.instance.stopMonitoringDevices();
-//            AdbUtils.executor.execute(new Runnable() {
-//
-//                @Override
-//                public void run() {
-//                    Logger.d(ADBHelper.killServer());
-//                    Logger.fs("ADB server killed");
-//                }
-//            });
-//        }
-//
-//        killed = !killed;
-    }
 
-//    private void refreshDevices() {
-//
-//        Device selectedDevice = Model.instance.getSelectedDevice();
-//
-//        int i = 0;
-//
-//        devicesListItems.clear();
-//        availableDevices = Model.instance.getAvailableDevices();
-//        boolean setSelected = false;
-//        for (Device device : availableDevices) {
-//            devicesListItems.add(getDeviceDescription(device));
-//
-//            if (selectedDevice != null && device.getId().equals(selectedDevice.getId())) {
-//                listDevices.getSelectionModel().select(i);
-//                setSelected = true;
-//            }
-//
-//            i++;
-//        }
-//
-//        if (!setSelected && devicesListItems.size() > 0) {
-//            listDevices.getSelectionModel().select(0);
-//        }
-//    }
+    }
 }

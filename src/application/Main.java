@@ -20,95 +20,82 @@ import java.io.PrintStream;
 
 public class Main extends Application {
 
-	public static HostServices hostService;
+    public static HostServices hostService;
 
-	public static Font courierFont13;
+    public static Font courierFont13;
 
-	@Override
-	public void start(Stage primaryStage) throws Exception {
-		System.out.println(System.getProperty("user.dir"));
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        if (Preferences.getInstance().isDebug()) {
+            System.setOut(new PrintStream(Preferences.getInstance().getLogFile()));
+            System.setErr(new PrintStream(Preferences.getInstance().getLogFileErr()));
+        }
 
-		if (Preferences.getInstance().isDebug()) {
-			System.setOut(new PrintStream(Preferences.getInstance().getLogFile()));
-			System.setErr(new PrintStream(Preferences.getInstance().getLogFileErr()));
-		}
+        if (Preferences.getInstance().getAdbPath().equals("")) {
+            findADBPath();
+        }
 
-		if (Preferences.getInstance().isFirstRun()) {
-			findADBPath();
-		}
+        AdbUtils.setAdbInstallLocationProvider(Preferences.getInstance());
+        DeviceMonitorService.instance.startMonitoringDevices();
 
-		AdbUtils.setAdbInstallLocationProvider(Preferences.getInstance());
-		DeviceMonitorService.instance.startMonitoringDevices();
+        hostService = getHostServices();
 
-		hostService = getHostServices();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("../dx/FXMLMain.fxml"));
+        //FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLMain.fxml"));
 
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("../dx/FXMLMain.fxml"));
-		//FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLMain.fxml"));
+        courierFont13 = Font.loadFont(getClass().getResource("cour.ttf").toString(), 13);
 
-		courierFont13 = Font.loadFont(getClass().getResource("cour.ttf").toString(), 13);
+        Parent root = loader.load();
+        Scene scene = new Scene(root, 1200, 620);
 
-		Parent root = loader.load();
-		Scene scene = new Scene(root, 1200, 620);
+        Image iconImage = new Image("/res/devexperts_logo.png");
+        primaryStage.getIcons().add(iconImage);
 
-		Image iconImage = new Image("/res/devexperts_logo.png");
-		primaryStage.getIcons().add(iconImage);
+        primaryStage.setTitle("ADB GUI Tool");
+        primaryStage.setScene(scene);
 
-		primaryStage.setTitle("ADB GUI Tool");
-		primaryStage.setScene(scene);
+        WindowController controller = loader.getController();
+        controller.setStageAndSetupListeners(primaryStage); // or what you want to do
 
-		WindowController controller = loader.getController();
-		controller.setStageAndSetupListeners(primaryStage); // or what you want to do
+        //primaryStage.setResizable(false);
+        primaryStage.show();
 
-		//primaryStage.setResizable(false);
-		primaryStage.show();
+        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent e) {
+                AdbUtils.run("adb kill-server");
+                Platform.exit();
+                System.exit(0);
+            }
+        });
 
-		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-			@Override
-			public void handle(WindowEvent e) {
-				AdbUtils.run("adb kill-server");
-				Platform.exit();
-				System.exit(0);
-			}
-		});
+        //Todo: remove
+        if (FolderUtil.getSnapshotFolder().getAbsolutePath().contains(" ")) {
+            DialogUtil.showErrorDialog("This app do not support operating from a path with spaces,\n" +
+                    "please move the app and start again");
+            System.exit(0);
+        }
+    }
 
-		//Todo: remove
-		if (FolderUtil.getSnapshotFolder().getAbsolutePath().contains(" ")){
-			DialogUtil.showErrorDialog("This app do not support operating from a path with spaces,\n" +
-					"please move the app and start again");
-			System.exit(0);
-		}
-
-		System.out.println(System.getProperty("user.dir"));
-
-	}
-
-	private void findADBPath() {
+    private void findADBPath() {
         Logger.d("Find adb on: " + Preferences.OS);
 
         if (Preferences.OS.startsWith("windows")) {
-            File adbPath = new File(System.getProperty("user.dir"), "platform-tools");
+            File adbPath = new File(System.getProperty("user.dir"), "platform-tools" + File.separator + "windows");
             File adbFile = new File(adbPath, "adb.exe");
             if (adbFile.exists()) {
-                Preferences.getInstance().setAdbPath(adbPath.getAbsolutePath() + "/");
+                Preferences.getInstance().setAdbPath(adbPath.getAbsolutePath() + File.separator);
             }
         } else {
-            File baseDirectory = new File("/Users/");
-
-            File[] userFolder = baseDirectory.listFiles();
-
-            if (userFolder != null)
-                for (File file : userFolder) {
-                    File pathCheck = new File(file, "Library/Android/sdk/platform-tools/");
-                    if (pathCheck.exists()) {
-                        Logger.d("Found adb location: " + pathCheck.getAbsolutePath());
-                        Preferences.getInstance().setAdbPath(pathCheck.getAbsolutePath() + "/");
-                        break;
-                    }
-                }
+            File adbPath = new File(System.getProperty("user.dir"), "platform-tools" + File.separator + "_nix");
+            File adbFile = new File(adbPath, "adb");
+            if (adbFile.exists()) {
+                Preferences.getInstance().setAdbPath(adbPath.getAbsolutePath() + File.separator);
+            }
         }
-	}
+    }
 
-	public static void main(String[] args) {
-		launch(args);
-	}
+    public static void main(String[] args) {
+        launch(args);
+    }
 }

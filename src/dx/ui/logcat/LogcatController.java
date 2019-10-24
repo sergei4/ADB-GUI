@@ -13,6 +13,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -28,11 +29,11 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class LogcatController implements Initializable {
-
-    private String selectedProcess = "";
 
     @FXML
     public ListView<LogcatLine> listViewLog;
@@ -50,6 +51,30 @@ public class LogcatController implements Initializable {
     private FilteredList<LogcatLine> outLogItemList = new FilteredList<>(logItemList);
 
     private Supplier<Device> deviceSupplier = () -> null;
+
+    private ObservableList<String> processItemList = FXCollections.observableArrayList();
+    private SortedList<String> sortedProcessItemList = new SortedList<>(processItemList);
+
+    {
+        sortedProcessItemList.setComparator(String::compareTo);
+    }
+
+    private rx.Subscription logCatSubs;
+    private rx.Subscription processSubs;
+
+    private static class ComplexFilter {
+        private String selectedProcessName = "";
+        private String userFilterStr = "";
+
+        Predicate<LogcatLine> createPredicate() {
+            Predicate<LogcatLine> processFilter = line ->
+                    selectedProcessName.equals("") || line.getProcess() != null && line.getProcess().getFullName().equals(selectedProcessName);
+            Predicate<LogcatLine> userFilter = line -> line.getSource().toLowerCase().contains(userFilterStr.toLowerCase());
+            return processFilter.and(userFilter);
+        }
+    }
+
+    private ComplexFilter complexFilter = new ComplexFilter();
 
     private DevicesController.Listener deviceControllerListener = new DevicesController.Listener() {
         @Override
@@ -74,12 +99,15 @@ public class LogcatController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        runnableProcessList.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                selectedProcess = newValue;
-            }
-        });
+        runnableProcessList.setItems(sortedProcessItemList);
+        runnableProcessList.getSelectionModel().selectedItemProperty()
+                .addListener(new ChangeListener<String>() {
+                    @Override
+                    public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                        complexFilter.selectedProcessName = newValue == null ? "" : newValue;
+                        outLogItemList.setPredicate(complexFilter.createPredicate());
+                    }
+                });
 
         listViewLog.setItems(outLogItemList);
         listViewLog.setCellFactory(cell -> new ListCell<LogcatLine>() {
@@ -89,6 +117,8 @@ public class LogcatController implements Initializable {
                 if (!empty && item != null) {
                     setText(item.toString());
                     setFont(Main.courierFont13);
+                } else {
+                    setText(null);
                 }
             }
         });
@@ -96,7 +126,8 @@ public class LogcatController implements Initializable {
         userFilter.textProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                outLogItemList.setPredicate(line -> line.getSource().contains(newValue));
+                complexFilter.userFilterStr = newValue == null ? "" : newValue;
+                outLogItemList.setPredicate(complexFilter.createPredicate());
             }
         });
 
@@ -111,15 +142,32 @@ public class LogcatController implements Initializable {
         }
     }
 
+    private void observeProcessList(Device device) {
+        processItemList.clear();
+        processItemList.add("");
+        if (processSubs != null && !processSubs.isUnsubscribed()) {
+            processSubs.unsubscribe();
+        }
+        if (device != null && device.isConnected()) {
+            processSubs = Observable.interval(3, TimeUnit.SECONDS)
+                    .flatMap(t -> Observable.from(device.getProcessList()))
+                    .filter(process -> process.getUser().startsWith("u"))
+                    .observeOn(JavaFxScheduler.platform())
+                    .filter(process -> !processItemList.contains(process.getFullName()))
+                    .doOnNext(process -> processItemList.add(process.getFullName()))
+                    .subscribe();
+        }
+    }
+
     private void start(Device device) {
         if (device != null && device.isConnected()) {
             logItemList.clear();
             toggleButtons(true);
-            startObserve(device.observeLog()
+            this.logCatSubs = device.observeLog()
                     .onBackpressureBuffer()
                     .observeOn(JavaFxScheduler.platform())
-                    .subscribe(this::addLine, this::onError)
-            );
+                    .subscribe(this::addLine, this::onError);
+            observeProcessList(device);
         }
     }
 
@@ -130,19 +178,13 @@ public class LogcatController implements Initializable {
 
     private void stop() {
         toggleButtons(false);
-        if (subscription != null && !subscription.isUnsubscribed()) {
-            subscription.unsubscribe();
+        if (logCatSubs != null && !logCatSubs.isUnsubscribed()) {
+            logCatSubs.unsubscribe();
         }
     }
 
-    private rx.Subscription subscription;
-
-    private void startObserve(rx.Subscription subscription) {
-        this.subscription = subscription;
-    }
-
     private boolean isRunning() {
-        return subscription != null && !subscription.isUnsubscribed();
+        return logCatSubs != null && !logCatSubs.isUnsubscribed();
     }
 
     private void addLine(LogcatLine line) {

@@ -82,7 +82,7 @@ public class DeviceRegistry {
         }
         for (Device device : devices) {
             if (deviceList.containsKey(device.getId())) {
-                deviceList.get(device.getId());
+                deviceList.get(device.getId()).copyProperties(device);
             } else {
                 deviceList.put(device.getId(), device);
             }

@@ -43,4 +43,19 @@ public class DeviceProcess {
     public String toString() {
         return String.format("user: %s, pid: %s, name: %s", user, pid, fullName);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DeviceProcess that = (DeviceProcess) o;
+
+        return pid.equals(that.pid);
+    }
+
+    @Override
+    public int hashCode() {
+        return pid.hashCode();
+    }
 }
