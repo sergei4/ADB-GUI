@@ -21,6 +21,6 @@ public class DeviceItemCell extends ListCell<Device> {
     }
 
     private String getDeviceDescription(Device device) {
-        return device.getModel() + ": " + device.getAndroidApiName() + " (" + device.getId() + ")" + (device.isConnected() ? "+" : "-");
+        return (device.isConnected() ? "+" : "-") + device.getModel() + ": " + device.getAndroidApiName() + " (" + device.getId() + ")";
     }
 }

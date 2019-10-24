@@ -100,7 +100,7 @@ public class FXMLMainController implements WindowController, Initializable {
             stage.setAlwaysOnTop(newValue);
         });
 
-        //menuPane.getChildren().add(menuBar);
+        menuPane.getChildren().add(menuBar);
 
         screenshot.visibleProperty().bind(btnOpenScreenShotScreen.selectedProperty());
         logcat.visibleProperty().bind(btnOpenLogScreen.selectedProperty());
