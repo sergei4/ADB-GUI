@@ -45,7 +45,7 @@ public class DeviceMonitorServiceTest {
     @Test
     public void observeLogcatTest() throws Exception {
         Device device = new Device("emulator-5554");
-        device.setSelected(true);
+        device.setConnected(true);
         device.observeLog()
                 .doOnNext(line -> System.out.println(line))
                 .subscribe();

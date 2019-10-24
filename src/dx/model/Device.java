@@ -2,6 +2,7 @@ package dx.model;
 
 import application.ADBHelper;
 import application.AdbUtils;
+import application.log.Logger;
 import rx.Observable;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
@@ -9,6 +10,7 @@ import rx.schedulers.Schedulers;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class Device {
 
@@ -69,6 +71,25 @@ public class Device {
 
     public void setConnected(boolean connected) {
         isConnected = connected;
+        if (connected) {
+            if (updProcessSubscription == null || updProcessSubscription.isUnsubscribed()) {
+                updProcessSubscription =
+                        Observable.interval(1, TimeUnit.SECONDS)
+                                .flatMap(c -> observeProcessList())
+                                .flatMapIterable(items -> items)
+                                .doOnNext(process -> {
+                                    processList.put(process.getPid(), process);
+                                })
+                                .subscribe(
+                                        process -> processList.put(process.getPid(), process),
+                                        e -> Logger.e(e.getMessage() != null ? e.getMessage() : "Error during collect device active process list")
+                                );
+            }
+        } else {
+            if (updProcessSubscription != null && !updProcessSubscription.isUnsubscribed()) {
+                updProcessSubscription.unsubscribe();
+            }
+        }
     }
 
     public static Device fromAdbLine(String adbLine) {
@@ -88,20 +109,19 @@ public class Device {
         return device;
     }
 
-    public void setSelected(boolean selected) {
-        if (selected) {
+    public void activate(boolean flag) {
+        if (flag) {
             if (updProcessSubscription == null || updProcessSubscription.isUnsubscribed()) {
                 updProcessSubscription =
-                        observeProcessList()
+                        Observable.interval(1, TimeUnit.SECONDS)
+                                .flatMap(i -> observeProcessList())
                                 .flatMapIterable(items -> items)
                                 .doOnNext(process -> {
                                     processList.put(process.getPid(), process);
                                 })
                                 .subscribe(
                                         process -> processList.put(process.getPid(), process),
-                                        e -> {
-                                            //Todo: replace by logger
-                                        }
+                                        e -> Logger.e(e.getMessage() != null ? e.getMessage() : "Error during collect device active process list")
                                 );
             }
         } else {
@@ -133,6 +153,19 @@ public class Device {
                 .map(this::parseLogLine);
     }
 
+    public Observable<LogcatLine> observeFullDeviceLog() {
+        return Observable.<String>unsafeCreate(s -> {
+            String result = AdbUtils.run(id, "logcat -t 12000");
+            String[] lines = result.split("\n");
+            for (int i = 0; i < lines.length; i++) {
+                s.onNext(lines[i]);
+            }
+            s.onCompleted();
+        }).filter(s -> !s.isEmpty())
+                .map(this::parseLogLine)
+                .subscribeOn(Schedulers.io());
+    }
+
     private LogcatLine parseLogLine(String logLine) {
         LogcatLine logcatLine = new LogcatLine(logLine);
         logcatLine.setProcess(processList.get(logcatLine.getProcessUuid()));
@@ -142,5 +175,20 @@ public class Device {
     @Override
     public String toString() {
         return String.format("Id: %s, Model: %s, api: %s, connected: %s", id, model, androidApiName, isConnected);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Device device = (Device) o;
+
+        return id.equals(device.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 }

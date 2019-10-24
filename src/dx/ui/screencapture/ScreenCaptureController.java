@@ -2,11 +2,11 @@ package dx.ui.screencapture;
 
 import application.ADBHelper;
 import application.AdbUtils;
-import application.DateUtil;
+import application.FileUtils;
 import application.FolderUtil;
 import application.log.Logger;
-import application.model.Model;
 import application.preferences.Preferences;
+import dx.model.Device;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class ScreenCaptureController implements Initializable {
 
@@ -43,24 +44,38 @@ public class ScreenCaptureController implements Initializable {
     @FXML
     private Button btnOpenInEditor;
 
-    private Image screenshotImage;
+    private DeviceSnapshot deviceSnapshot;
+
+    private Supplier<Device> deviceSupplier = () -> null;
+
+    private static class DeviceSnapshot {
+        Device device;
+        Image image;
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        if(Preferences.OS.startsWith("windows")){
+        if (Preferences.OS.startsWith("windows")) {
             btnOpenInEditor.setVisible(true);
             btnOpenInEditor.setManaged(true);
         }
     }
 
-    private void updatePicture() {
+    public void setDeviceSupplier(Supplier<Device> supplier) {
+        deviceSupplier = supplier;
+    }
+
+    private void updatePicture(Device device) {
         File file = getTempSnapshotFile();
         if (file.exists()) {
-            screenshotImage = new Image(file.toURI().toString());
+            deviceSnapshot = new DeviceSnapshot();
 
-            updateScreenRatio(screenshotImage);
+            deviceSnapshot.device = device;
+            deviceSnapshot.image = new Image(file.toURI().toString());
 
-            imageViewCapture.setImage(screenshotImage);
+            updateScreenRatio(deviceSnapshot.image);
+
+            imageViewCapture.setImage(deviceSnapshot.image);
 
             imageViewCapture.fitWidthProperty().bind(paneImageContainer.widthProperty());
             imageViewCapture.fitHeightProperty().bind(paneImageContainer.heightProperty());
@@ -76,26 +91,29 @@ public class ScreenCaptureController implements Initializable {
     public void onCreateSnapshotClicked(ActionEvent actionEvent) {
         new Thread(() -> {
             String tempPicture = "/sdcard/temp.png";
-            Logger.d("Taking snapshot " + tempPicture);
+            Device currentDevice = deviceSupplier.get();
+            if (currentDevice != null && currentDevice.isConnected()) {
+                Logger.d("Taking snapshot " + tempPicture);
 
-            String result = AdbUtils.run("shell screencap -p " + tempPicture);
-            if (!result.equals("")) {
-                Logger.e("Error taking snapshot: " + result);
-                return;
+                String result = AdbUtils.run(currentDevice.getId(), "adb shell screencap -p " + tempPicture);
+                if (!result.equals("")) {
+                    Logger.e("Error taking snapshot: " + result);
+                    return;
+                }
+
+                File snapshotFile = getTempSnapshotFile();
+                if (snapshotFile.exists()) {
+                    snapshotFile.delete();
+                }
+
+                if (ADBHelper.pull(currentDevice.getId(), tempPicture, snapshotFile.getAbsolutePath())) {
+                    Logger.d("Created snapshot: " + snapshotFile.getAbsolutePath());
+                }
+
+                ADBHelper.rm(currentDevice.getId(), tempPicture);
+
+                Platform.runLater(() -> updatePicture(currentDevice));
             }
-
-            File snapshotFile = getTempSnapshotFile();
-            if (snapshotFile.exists()) {
-                snapshotFile.delete();
-            }
-
-            if (ADBHelper.pull(tempPicture, snapshotFile.getAbsolutePath())) {
-                Logger.d("Created snapshot: " + snapshotFile.getAbsolutePath());
-            }
-
-            ADBHelper.rm(tempPicture);
-
-            Platform.runLater(() -> updatePicture());
         }).start();
     }
 
@@ -106,18 +124,12 @@ public class ScreenCaptureController implements Initializable {
     }
 
     private void saveFileImpl(Consumer<File> createdFile) {
-        if (screenshotImage != null) {
+        if (deviceSnapshot != null) {
             new Thread(() -> {
-                Logger.ds("Saving snapshot...");
-                String fileName = Model.instance.getSelectedDevice().getName() + "_" +
-                        Model.instance.getSelectedDevice().getAndroidVersion() + "_" +
-                        DateUtil.getCurrentTimeStamp() + ".png";
 
-                fileName = fileName.replace(" ", "");
+                File snapshotFile = FileUtils.createSnapshotFile(deviceSnapshot.device);
 
-                File snapshotFile = new File(snapshotsFolder, fileName);
-
-                BufferedImage bImage = SwingFXUtils.fromFXImage(screenshotImage, null);
+                BufferedImage bImage = SwingFXUtils.fromFXImage(deviceSnapshot.image, null);
                 float ratio = 400f / bImage.getWidth();
 
                 try {

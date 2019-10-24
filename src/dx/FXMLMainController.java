@@ -1,26 +1,30 @@
 package dx;
 
+import application.AdbUtils;
 import application.FolderUtil;
 import application.WindowController;
 import application.log.Logger;
 import application.preferences.Preferences;
 import application.startupcheck.StartupCheckController;
-import dx.service.DeviceMonitorService;
+import dx.model.Device;
 import dx.ui.devices.DevicesController;
 import dx.ui.logcat.LogcatController;
+import dx.ui.logcat.LogcatUtils;
+import dx.ui.progress.ProgressDialogController;
+import dx.ui.screencapture.ScreenCaptureController;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.*;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.awt.*;
 import java.io.IOException;
@@ -44,6 +48,9 @@ public class FXMLMainController implements WindowController, Initializable {
 
     @FXML
     private LogcatController logcatController;
+
+    @FXML
+    private ScreenCaptureController screenshotController;
 
     @FXML
     private Pane menuPane;
@@ -72,6 +79,12 @@ public class FXMLMainController implements WindowController, Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        //init controllers
+        screenshotController.setDeviceSupplier(() -> devicesController.getSelectedDevice());
+
+        logcatController.setDeviceSupplier(() -> devicesController.getSelectedDevice());
+        devicesController.addListener(logcatController.getDeviceControllerListener());
+
         //init menu
         MenuBar menuBar = new MenuBar();
 
@@ -87,7 +100,7 @@ public class FXMLMainController implements WindowController, Initializable {
             stage.setAlwaysOnTop(newValue);
         });
 
-        menuPane.getChildren().add(menuBar);
+        //menuPane.getChildren().add(menuBar);
 
         screenshot.visibleProperty().bind(btnOpenScreenShotScreen.selectedProperty());
         logcat.visibleProperty().bind(btnOpenLogScreen.selectedProperty());
@@ -161,26 +174,21 @@ public class FXMLMainController implements WindowController, Initializable {
     }
 
     @FXML
-    public void onSaveLogFolderClicked(ActionEvent actionEvent) {
-        logcatController.saveSelectedDeviceLog();
+    public void onSaveLogFolderClicked(ActionEvent actionEvent) throws Exception {
+        Device currentDevice = devicesController.getSelectedDevice();
+        if (currentDevice != null && currentDevice.isConnected()) {
+            Stage dialog = ProgressDialogController.createDialog("Gathering information. Please wait...");
+            dialog.initStyle(StageStyle.UNDECORATED);
+            FXMLMainController.showDialog(dialog);
+            LogcatUtils.save(currentDevice, currentDevice.observeFullDeviceLog(), () -> Platform.runLater(dialog::close));
+        }
     }
 
     @FXML
     public void onOpenLangSettingsClicked(ActionEvent actionEvent) {
-//        String deviceId = Model.instance.getSelectedDeviceId();
-//        if (deviceId != null) {
-//            AdbUtils.run(deviceId, "adb shell am start -n com.android.settings/.LanguageSettings");
-//        }
-        if (DeviceMonitorService.instance.isRunning()) {
-            DeviceMonitorService.instance.stop();
-        } else {
-            DeviceMonitorService.instance.start();
-            DeviceMonitorService.instance.observe()
-                    .subscribe(list -> {
-                        for (String s : list) {
-                            Logger.d(s);
-                        }
-                    });
+        Device currentDevice = devicesController.getSelectedDevice();
+        if (currentDevice != null && currentDevice.isConnected()) {
+            AdbUtils.run(currentDevice.getId(), "adb shell am start -n com.android.settings/.LanguageSettings");
         }
     }
 

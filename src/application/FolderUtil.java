@@ -18,12 +18,19 @@ public class FolderUtil {
 
 	public static File getSnapshotFolder() {
 
-		File apkFolder = new File(Preferences.getInstance().getSnapshotFolder());
-		if (!apkFolder.exists()){
-			apkFolder.mkdir();
+		File folder = new File(Preferences.getInstance().getSnapshotFolder());
+		if (!folder.exists()){
+			folder.mkdir();
 		}
 
-		return apkFolder;
+		return folder;
 	}
 
+	public static File getLogsFolder() {
+		File logFolder = new File(Preferences.getInstance().getLogsFolder());
+		if (!logFolder.exists()) {
+			logFolder.mkdir();
+		}
+		return logFolder;
+	}
 }

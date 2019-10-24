@@ -10,6 +10,7 @@ import rx.subjects.Subject;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,22 +48,17 @@ public class DeviceRegistry {
     private void setDevicesDisconnected() {
         for (Device device : deviceList.values()) {
             device.setConnected(false);
-            //Todo: remove late
-            device.setSelected(false);
         }
     }
 
     private void startObserveDeviceService() {
         deviceMonitorService.observe()
-                .doOnNext(list -> setDevicesDisconnected())
-                .flatMap(devices -> Observable.from(devices)
+                .switchMap(devices -> Observable.from(devices)
                         .map(Device::fromAdbLine)
-                        .doOnNext(device -> device.setConnected(true))
                         .map(this::setDeviceInfo)
-                        .doOnNext(device -> deviceList.put(device.getId(), device))
                         .subscribeOn(Schedulers.io())
                         .toList())
-                .map(list -> deviceList.values())
+                .map(this::updDevices)
                 .subscribe(deviceListSbj::onNext);
     }
 
@@ -76,5 +72,22 @@ public class DeviceRegistry {
             device.setAndroidApiName(split[0]);
         }
         return device;
+    }
+
+    private Collection<Device> updDevices(List<Device> devices) {
+        for (Device device : deviceList.values()) {
+            if (!devices.contains(device)) {
+                device.setConnected(false);
+            }
+        }
+        for (Device device : devices) {
+            if (deviceList.containsKey(device.getId())) {
+                deviceList.get(device.getId());
+            } else {
+                deviceList.put(device.getId(), device);
+            }
+            deviceList.get(device.getId()).setConnected(true);
+        }
+        return deviceList.values();
     }
 }

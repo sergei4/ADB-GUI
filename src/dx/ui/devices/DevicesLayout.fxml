@@ -6,10 +6,7 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 <StackPane xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dx.ui.devices.DevicesController">
     <!-- TODO Add Nodes -->
@@ -18,7 +15,7 @@
 
         <HBox alignment="CENTER_LEFT" spacing="4.0">
             <Label text="Devices" />
-            <Button fx:id="buttonADBToggle" onAction="#handleToggleADBClicked" text="Kill ADB" />
+            <Button fx:id="buttonADBToggle" onAction="#handleToggleADBClicked" text="Kill ADB" visible="false" />
 
         </HBox>
 

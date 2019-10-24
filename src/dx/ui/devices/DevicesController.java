@@ -5,6 +5,8 @@ import application.log.Logger;
 import dx.model.Device;
 import dx.model.DeviceRegistry;
 import dx.service.DeviceMonitorService;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -21,16 +23,24 @@ import rx.schedulers.JavaFxScheduler;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DevicesController implements Initializable {
 
+    public interface Listener {
+        void onDeviceChanged(Device device);
+    }
+
+    private List<Listener> listeners = new ArrayList<>();
+
     private boolean killed = false;
 
     @FXML
-    private ListView<String> listDevices;
+    private ListView<Device> listDevices;
 
     @FXML
     private Button buttonADBToggle;
@@ -38,34 +48,61 @@ public class DevicesController implements Initializable {
     @FXML
     private Pane devicePane;
 
-    private ObservableList<String> devicesListItems = FXCollections.observableArrayList();
+    private ObservableList<Device> devicesListItems = FXCollections.observableArrayList();
 
     private DeviceRegistry deviceRegistry;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         listDevices.setItems(devicesListItems);
+        listDevices.setCellFactory(listView -> new DeviceItemCell());
 
-//        listDevices.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
-//            public void changed(ObservableValue<? extends String> ov, String old_val, String new_val) {
-//                if (listDevices.getSelectionModel().getSelectedIndex() >= 0) {
-//                    Model.instance.setSelectedDevice(availableDevices.get(listDevices.getSelectionModel().getSelectedIndex()));
-//                }
-//            }
-//        });
+        listDevices.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Device>() {
+            @Override
+            public void changed(ObservableValue<? extends Device> observable, Device oldValue, Device newValue) {
+                for (Listener l : listeners) {
+                    l.onDeviceChanged(newValue);
+                }
+            }
+        });
 
         deviceRegistry = new DeviceRegistry(DeviceMonitorService.instance);
 
         deviceRegistry.observeDeviceList()
                 .observeOn(JavaFxScheduler.platform())
-                .subscribe(devices -> {
-                    devicesListItems.clear();
-                    for (Device device : devices) {
-                        devicesListItems.add(getDeviceDescription(device));
-                    }
-                });
+                .flatMapIterable(d -> d)
+                .doOnNext(this::updDevice)
+                .subscribe();
 
         cfgDragAndDropEvent();
+    }
+
+    public Device getSelectedDevice() {
+        return listDevices.getSelectionModel().getSelectedItem();
+    }
+
+    public void addListener(Listener listener) {
+        if (listener != null && !listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(Listener listener) {
+        if (listener != null) {
+            listeners.remove(listener);
+        }
+    }
+
+    private void updDevice(Device device) {
+        int index = devicesListItems.indexOf(device);
+        if (index == -1) {
+            devicesListItems.add(device);
+        } else {
+            devicesListItems.set(index, device);
+        }
+        if (listDevices.getSelectionModel().getSelectedItem() == null) {
+            listDevices.getSelectionModel().selectFirst();
+        }
     }
 
     private void cfgDragAndDropEvent() {
@@ -86,19 +123,22 @@ public class DevicesController implements Initializable {
                 boolean success = false;
                 if (db.hasFiles()) {
                     File file = db.getFiles().get(0);
-                    Logger.ds("Installing...");
                     new Thread(() -> {
-                        String result = ADBHelper.install(file.getAbsolutePath());
-                        if (result == null) {
-                            Logger.fs("Application has been installed successful");
-                        } else {
-                            Pattern causeRegExpr = Pattern.compile("Failure (.*)");
-                            Matcher matcher = causeRegExpr.matcher(result);
-                            String cause = "";
-                            if (matcher.find()) {
-                                cause = matcher.group(1);
+                        Device currentDevice = listDevices.getSelectionModel().getSelectedItem();
+                        if (currentDevice != null && currentDevice.isConnected()) {
+                            Logger.ds("Installing...");
+                            String result = ADBHelper.install(currentDevice.getId(), file.getAbsolutePath());
+                            if (result == null) {
+                                Logger.fs("Application has been installed successful");
+                            } else {
+                                Pattern causeRegExpr = Pattern.compile("Failure (.*)");
+                                Matcher matcher = causeRegExpr.matcher(result);
+                                String cause = "";
+                                if (matcher.find()) {
+                                    cause = matcher.group(1);
+                                }
+                                Logger.es("Failed installation: " + cause);
                             }
-                            Logger.es("Failed installation: " + cause);
                         }
                     }).start();
                     success = true;
@@ -158,8 +198,4 @@ public class DevicesController implements Initializable {
 //            listDevices.getSelectionModel().select(0);
 //        }
 //    }
-
-    private String getDeviceDescription(Device device) {
-        return device.getModel() + ": " + device.getAndroidApiName() + " (" + device.getId() + ")" + (device.isConnected() ? "+" : "-");
-    }
 }

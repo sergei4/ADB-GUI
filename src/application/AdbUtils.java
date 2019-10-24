@@ -6,13 +6,7 @@ import application.model.CommandBatch;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 public class AdbUtils {
     private static AdbInstallLocationProvider adbInstallLocationProvider;
@@ -100,20 +94,18 @@ public class AdbUtils {
     }
 
     public static String executeCommand(String command, String[] commands) {
-        // System.out.println("Run: " + command);
+        //Logger.d("Run: " + command);
 
         StringBuffer output = new StringBuffer();
 
         Process p;
         try {
-
             String[] envp = {};
             if (commands == null) {
                 p = Runtime.getRuntime().exec(command, envp);
             } else {
                 p = Runtime.getRuntime().exec(commands, envp);
             }
-
             //p.waitFor(10, TimeUnit.SECONDS);
             BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 

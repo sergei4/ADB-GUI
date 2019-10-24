@@ -124,6 +124,7 @@ public class Preferences implements AdbInstallLocationProvider {
         return preferenceObj.debug;
     }
 
+    @Deprecated
     public File getLogcatFolder() {
         File logFolder = logcatFolder;
         if (!logFolder.exists()) {
@@ -225,6 +226,10 @@ public class Preferences implements AdbInstallLocationProvider {
 
     public String getSnapshotFolder() {
         return screenshotsFolder.getAbsolutePath();
+    }
+
+    public String getLogsFolder() {
+        return logcatFolder.getAbsolutePath();
     }
 
     public File getAppFolder() {

@@ -12,7 +12,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ADBHelper {
-    public static boolean pull(String from, String to) {
+
+    @Deprecated
+    public static boolean pull(String from, String to){
+        return pull(null, from, to);
+    }
+
+    public static boolean pull(String deviceId, String from, String to) {
 
         //to = to.replaceAll(" ", "_");
         //to = to.replaceAll(" ", "\\\\ ");
@@ -25,8 +31,8 @@ public class ADBHelper {
             e.printStackTrace();
         }*/
 
-        String run = "pull " + from + " " + to + "";
-        String result = AdbUtils.run(run);
+        String cmd = "pull " + from + " " + to + "";
+        String result = AdbUtils.run(deviceId, cmd);
 
         if (!result.trim().contains("100%")) {
             Logger.e(result + "\nto: " + to);
@@ -36,8 +42,13 @@ public class ADBHelper {
         return true;
     }
 
-    public static String rm(String fileToDelete) {
-        return AdbUtils.run("shell rm \"" + fileToDelete + "\"");
+    @Deprecated
+    public static String rm(String fileToDelete){
+        return rm(null, fileToDelete);
+    }
+
+    public static String rm(String deviceId, String fileToDelete) {
+        return AdbUtils.run(deviceId, "shell rm \"" + fileToDelete + "\"");
     }
 
     public static String killServer() {
@@ -86,9 +97,20 @@ public class ADBHelper {
         return result;
     }
 
-    public static String install(String selectedApk) {
+    //Todo: should be removed after refactoring
+    @Deprecated
+    public static String install(String apkFile) {
+        return install(null, apkFile);
+    }
 
-        String result = AdbUtils.run("install -r -t \"" + selectedApk + "\"");
+    //Todo: think why adb install -r -t "file.apk" doesn't work on macOS
+    //Todo: should be tested on windows and linux
+    public static String install(String deviceId, String apkFile) {
+
+        String installCmd = "install -r -t " + apkFile + "";
+        Logger.d(installCmd);
+
+        String result = AdbUtils.run(deviceId, installCmd);
         String[] split = result.split("\n");
 
         Logger.d("install result: " + result);

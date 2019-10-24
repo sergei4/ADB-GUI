@@ -19,6 +19,10 @@ public class LogcatLine {
         processId = matcher.find() ? matcher.group(1).trim() : null;
     }
 
+    public String getSource() {
+        return source;
+    }
+
     @Nullable
     public DeviceProcess getProcess() {
         return process;

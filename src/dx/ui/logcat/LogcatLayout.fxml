@@ -1,14 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <StackPane prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dx.ui.logcat.LogcatController">
     <VBox spacing="4.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <AnchorPane>
@@ -20,6 +14,7 @@
                     <Button fx:id="buttonClearLogCat" onAction="#onClearLocallyClicked" text="Clear logcat" />
                     <Button fx:id="buttonSaveToFile" onAction="#onSaveToFileClicked" text="Save to file" />
                     <ComboBox fx:id="runnableProcessList" minWidth="150.0" />
+               <TextField fx:id="userFilter" />
                 </HBox>
                 <Button fx:id="buttonOpenLogFolder" mnemonicParsing="false" onAction="#onOpenLogFolderClicked" text="Open folder" AnchorPane.rightAnchor="0.0" />
             </children>
