@@ -2,7 +2,6 @@ package application;
 
 import application.log.Logger;
 import application.preferences.Preferences;
-import application.services.DeviceMonitorService;
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.application.Platform;
@@ -36,12 +35,10 @@ public class Main extends Application {
         }
 
         AdbUtils.setAdbInstallLocationProvider(Preferences.getInstance());
-        DeviceMonitorService.instance.startMonitoringDevices();
 
         hostService = getHostServices();
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("../dx/FXMLMain.fxml"));
-        //FXMLLoader loader = new FXMLLoader(getClass().getResource("FXMLMain.fxml"));
 
         courierFont13 = Font.loadFont(getClass().getResource("cour.ttf").toString(), 13);
 
@@ -69,7 +66,7 @@ public class Main extends Application {
             }
         });
 
-        //Todo: remove
+        //Todo: think how to resolve this
         if (FolderUtil.getSnapshotFolder().getAbsolutePath().contains(" ")) {
             DialogUtil.showErrorDialog("This app do not support operating from a path with spaces,\n" +
                     "please move the app and start again");
