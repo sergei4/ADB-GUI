@@ -2,6 +2,7 @@ package application;
 
 import application.log.Logger;
 import application.preferences.Preferences;
+import dx.FXMLMainController;
 import javafx.application.Application;
 import javafx.application.HostServices;
 import javafx.application.Platform;
@@ -38,7 +39,7 @@ public class Main extends Application {
 
         hostService = getHostServices();
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("../dx/FXMLMain.fxml"));
+        FXMLLoader loader = new FXMLLoader(FXMLMainController.class.getResource("FXMLMain.fxml"));
 
         courierFont13 = Font.loadFont(getClass().getResource("cour.ttf").toString(), 13);
 
