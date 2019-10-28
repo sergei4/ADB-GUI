@@ -2,6 +2,7 @@ package application;
 
 import application.intentbroadcasts.IntentBroadcast;
 import application.log.Logger;
+import application.preferences.Preferences;
 import rx.schedulers.Schedulers;
 
 import java.io.BufferedReader;
@@ -14,7 +15,7 @@ import java.util.Set;
 public class ADBHelper {
 
     @Deprecated
-    public static boolean pull(String from, String to){
+    public static boolean pull(String from, String to) {
         return pull(null, from, to);
     }
 
@@ -43,7 +44,7 @@ public class ADBHelper {
     }
 
     @Deprecated
-    public static String rm(String fileToDelete){
+    public static String rm(String fileToDelete) {
         return rm(null, fileToDelete);
     }
 
@@ -104,10 +105,14 @@ public class ADBHelper {
     }
 
     //Todo: think why adb install -r -t "file.apk" doesn't work on macOS
-    //Todo: should be tested on windows and linux
     public static String install(String deviceId, String apkFile) {
 
-        String installCmd = "install -r -t " + apkFile + "";
+        String installCmd;
+        if (Preferences.OS.startsWith("windows")) {
+            installCmd = "install -r -t \"" + apkFile + "\"";
+        } else {
+            installCmd = "install -r -t " + apkFile + "";
+        }
         Logger.d(installCmd);
 
         String result = AdbUtils.run(deviceId, installCmd);
