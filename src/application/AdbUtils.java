@@ -1,17 +1,16 @@
 package application;
 
-import application.log.Logger;
-import application.model.Command;
-import application.model.CommandBatch;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.concurrent.*;
-
+@Deprecated
 public class AdbUtils {
-    private static AdbInstallLocationProvider adbInstallLocationProvider;
 
-    //public static ExecutorService executor = Executors.newSingleThreadExecutor();
     public static ExecutorService executor = Executors.newScheduledThreadPool(2);
     public static ExecutorService executorTimeout = Executors.newScheduledThreadPool(2);
 
@@ -39,104 +38,5 @@ public class AdbUtils {
             }
         });
         return null;
-    }
-
-    public static void setAdbInstallLocationProvider(AdbInstallLocationProvider provider) {
-        adbInstallLocationProvider = provider;
-    }
-
-    public static String run(CommandBatch batch) {
-        String result = "";
-
-        for (Command command : batch.commands) {
-            result += executeADBCommand(command.command) + "\n";
-        }
-
-        return result;
-    }
-
-    private static String executeADBCommand(String command) {
-        return executeCommand(getAdbCommand(null, command));
-    }
-
-    private static String executeADBCommand(String deviceId, String command) {
-        return executeCommand(getAdbCommand(deviceId, command));
-    }
-
-    public static String getAdbCommand(String deviceId, String command) {
-        if (command.startsWith("adb")) {
-            command = command.replaceFirst("adb", "");
-        }
-
-        return adbInstallLocationProvider.getAdbInstallLocatoin() + "adb "
-                + (deviceId != null ? "-s " + deviceId + " " : "")
-                + command;
-    }
-
-    public static String run(Command command) {
-        return executeADBCommand(command.command);
-    }
-
-    public static String run(String string) {
-        return executeADBCommand(string);
-    }
-
-    public static String run(String deviceId, String string) {
-        return executeADBCommand(deviceId, string);
-    }
-
-    public static String executeCommand(String[] command) {
-        return executeCommand(null, command);
-    }
-
-    public static String executeCommand(String command) {
-        return executeCommand(command, null);
-    }
-
-    public static String executeCommand(String command, String[] commands) {
-        //Logger.d("Run: " + command);
-
-        StringBuffer output = new StringBuffer();
-
-        Process p;
-        try {
-            String[] envp = {};
-            if (commands == null) {
-                p = Runtime.getRuntime().exec(command, envp);
-            } else {
-                p = Runtime.getRuntime().exec(commands, envp);
-            }
-            //p.waitFor(10, TimeUnit.SECONDS);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-            boolean firstLine = true;
-            String line = "";
-            while ((line = reader.readLine()) != null) {
-                if (!firstLine) {
-                    output.append("\n");
-                }
-                firstLine = false;
-                output.append(line);
-                // System.out.println(line);
-            }
-
-            reader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-            while ((line = reader.readLine()) != null) {
-                if (!firstLine) {
-                    output.append("\n");
-                }
-                firstLine = false;
-                output.append(line + "\n");
-                // System.out.println(line);
-            }
-
-        } catch (Exception e) {
-            Logger.e("Run command: " + command);
-            e.printStackTrace();
-            output.append(e.getMessage());
-        }
-
-        return output.toString();
     }
 }

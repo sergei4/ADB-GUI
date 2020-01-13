@@ -1,11 +1,11 @@
 package application.logexceptions;
 
-import application.AdbUtils;
-import application.DateUtil;
-import application.DialogUtil;
-import application.FolderUtil;
 import application.log.Logger;
 import application.model.Model;
+import application.utils.DateUtil;
+import application.utils.DialogUtil;
+import application.utils.FolderUtil;
+import dx.helpers.AdbHelper;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -15,7 +15,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +73,7 @@ public class LogExceptionsController implements Initializable {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                String logcatCommand = AdbUtils.getAdbCommand(Model.instance.getSelectedDeviceId(), "logcat");
+                String logcatCommand = AdbHelper.composeAdbCommand(Model.instance.getSelectedDeviceId(), "logcat");
 
                 Process process;
                 try {

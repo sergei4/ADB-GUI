@@ -1,16 +1,14 @@
 package application.batchcommands;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
-
-import application.preferences.Preferences;
-import com.google.gson.Gson;
-
 import application.AdbUtils;
-import application.DialogUtil;
-import application.FileUtils;
+import application.model.Command;
+import application.model.CommandBatch;
+import application.preferences.Preferences;
+import application.utils.DialogUtil;
+import application.utils.FileUtils;
+import com.google.gson.Gson;
+import dx.Executor;
+import dx.helpers.AdbHelper;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -24,11 +22,14 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import application.model.Command;
-import application.model.CommandBatch;
-import javafx.scene.layout.VBox;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
 
 public class BatchCommandEditController implements Initializable {
 
@@ -272,7 +273,7 @@ public class BatchCommandEditController implements Initializable {
         updateRunningIndex(i);
         Command command = commandBatch.commands.get(i);
         log("Run: " + command.command);
-        log(AdbUtils.run(command));
+        log(Executor.run(AdbHelper.composeAdbCommand(command.command)));
         updateRunningIndex(-1);
     }
 

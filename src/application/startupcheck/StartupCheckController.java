@@ -1,9 +1,9 @@
 package application.startupcheck;
 
-import application.ADBHelper;
 import application.log.Logger;
 import application.preferences.Preferences;
-import dx.service.DeviceMonitorService;
+import dx.helpers.AdbHelper;
+import dx.service.AndroidDeviceMonitorService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -26,6 +26,7 @@ import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+@Deprecated
 public class StartupCheckController implements Initializable {
 
     public static ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -48,15 +49,15 @@ public class StartupCheckController implements Initializable {
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
                 }
-                boolean adbExists = ADBHelper.isADBFound();
+                boolean adbExists = AdbHelper.isADBFound();
 
                 if (!adbExists) {
                     if (tryToFindADB()) {
-                        adbExists = ADBHelper.isADBFound();
+                        adbExists = AdbHelper.isADBFound();
                         Logger.d("Is adb found after auto search: " + adbExists);
                     }
                 } else {
-                    Logger.d("Is adb found: " + Preferences.getInstance().getAdbPath());
+                    Logger.d("Is adb found: " + Preferences.getInstance().getPlatformToolsPath());
                 }
 
                 boolean finalAdbExists = adbExists;
@@ -65,14 +66,14 @@ public class StartupCheckController implements Initializable {
                     public void run() {
                         if (finalAdbExists) {
                             stage.close();
-                            DeviceMonitorService.instance.start();
+                            AndroidDeviceMonitorService.instance.start();
                         } else {
                             vboxLaoding.setVisible(false);
                             vboxLaoding.setManaged(false);
                             vboxEditAdbPath.setVisible(true);
                             vboxEditAdbPath.setManaged(true);
 
-                            textFieldADBPath.setText(Preferences.getInstance().getAdbPath());
+                            textFieldADBPath.setText(Preferences.getInstance().getPlatformToolsPath());
                         }
                     }
                 });
@@ -91,7 +92,7 @@ public class StartupCheckController implements Initializable {
                     Platform.runLater(new Runnable() {
                         @Override
                         public void run() {
-                            Preferences.getInstance().setAdbPath(adbPath.getAbsolutePath() + "/");
+                            Preferences.getInstance().setPlatformToolsPath(adbPath.getAbsolutePath() + "/");
                             try {
                                 Preferences.getInstance().save();
                             } catch (IOException e) {
@@ -138,7 +139,7 @@ public class StartupCheckController implements Initializable {
     }
 
     public void onCheckClicked(ActionEvent actionEvent) {
-        Preferences.getInstance().setAdbPath(textFieldADBPath.getText());
+        Preferences.getInstance().setPlatformToolsPath(textFieldADBPath.getText());
         try {
             Preferences.getInstance().save();
         } catch (IOException ignored) {
@@ -148,7 +149,7 @@ public class StartupCheckController implements Initializable {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final boolean adbExists = ADBHelper.isADBFound();
+                final boolean adbExists = AdbHelper.isADBFound();
                 Logger.d("Is adb found after user input: " + adbExists);
 
                 Platform.runLater(new Runnable() {
@@ -157,7 +158,7 @@ public class StartupCheckController implements Initializable {
                         if (adbExists) {
                             labelStatus.setText("ADB found! Go on and have some fun!");
                             labelStatus.setTextFill(Color.GREEN);
-                            DeviceMonitorService.instance.start();
+                            AndroidDeviceMonitorService.instance.start();
                         } else {
                             labelStatus.setText("No ADB found... Try different path");
                             labelStatus.setTextFill(Color.RED);

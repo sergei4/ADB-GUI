@@ -1,9 +1,12 @@
 package application.screencapture;
 
-import application.*;
 import application.log.Logger;
 import application.model.Model;
 import application.preferences.Preferences;
+import application.utils.DateUtil;
+import application.utils.FolderUtil;
+import dx.Executor;
+import dx.helpers.AdbHelper;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -35,176 +38,176 @@ import java.util.concurrent.Executors;
 
 public class ScreenCaptureController implements Initializable {
 
-	public static ExecutorService executor = Executors.newSingleThreadExecutor();
-	public AnchorPane paneImageContainer;
-	public Label labelLog;
-	File snapshotsFolder = FolderUtil.getSnapshotFolder();
+    public static ExecutorService executor = Executors.newSingleThreadExecutor();
+    public AnchorPane paneImageContainer;
+    public Label labelLog;
+    File snapshotsFolder = FolderUtil.getSnapshotFolder();
 
-	@FXML
-	public ImageView imageViewCapture;
+    @FXML
+    public ImageView imageViewCapture;
 
-	@FXML
-	public Pane pane;
-	private volatile boolean work;
-	private int saving = 1;
-	private int saved = 2;
-	private Stage stage;
-	private Scene scene;
+    @FXML
+    public Pane pane;
+    private volatile boolean work;
+    private int saving = 1;
+    private int saved = 2;
+    private Stage stage;
+    private Scene scene;
 
-	@Override
-	public void initialize(URL location, ResourceBundle resources) {
-
-
-		imageViewCapture.fitWidthProperty().bind(paneImageContainer.widthProperty());
-		imageViewCapture.fitHeightProperty().bind(paneImageContainer.heightProperty());
-
-		//paneImageContainer.widthProperty().bind(pane.widthProperty());
-		//paneImageContainer.fitHeightProperty().bind(pane.heightProperty());
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
 
 
-		startScreenMonitoring();
-	}
+        imageViewCapture.fitWidthProperty().bind(paneImageContainer.widthProperty());
+        imageViewCapture.fitHeightProperty().bind(paneImageContainer.heightProperty());
 
-	private void updatePicture() {
-		File file = getTempSnapshotSaved();
-		if (file.exists()) {
-			Image image = new Image(file.toURI().toString());
+        //paneImageContainer.widthProperty().bind(pane.widthProperty());
+        //paneImageContainer.fitHeightProperty().bind(pane.heightProperty());
 
-			updateScreenRatio(image);
 
-			imageViewCapture.setImage(image);
-		}
-	}
+        startScreenMonitoring();
+    }
 
-	private void updateScreenRatio(Image image) {
-		//stage.minWidthProperty().bind(scene.heightProperty().divide(1.83333333333333d));
-		//stage.minHeightProperty().bind(scene.widthProperty().multiply(1.83333333333333d));
-	}
+    private void updatePicture() {
+        File file = getTempSnapshotSaved();
+        if (file.exists()) {
+            Image image = new Image(file.toURI().toString());
 
-	private void setStage(Stage stage, Scene scene) {
-		stage.setOnHiding(new EventHandler<WindowEvent>() {
-			@Override
-			public void handle(WindowEvent event) {
-				stopScreenMonitoring();
-			}
-		});
+            updateScreenRatio(image);
 
-		this.stage = stage;
-		this.scene = scene;
-	}
+            imageViewCapture.setImage(image);
+        }
+    }
 
-	private void stopScreenMonitoring() {
-		Logger.d("Stop screen monitoring " + this);
-		work = false;
-	}
+    private void updateScreenRatio(Image image) {
+        //stage.minWidthProperty().bind(scene.heightProperty().divide(1.83333333333333d));
+        //stage.minHeightProperty().bind(scene.widthProperty().multiply(1.83333333333333d));
+    }
 
-	@FXML
-	public void onSaveClicked(ActionEvent actionEvent) {
-		String fileName = Model.instance.getSelectedDevice().getName() + " " +
-				Model.instance.getSelectedDevice().getAndroidVersion() + " " +
-				DateUtil.getCurrentTimeStamp() + ".png";
+    private void setStage(Stage stage, Scene scene) {
+        stage.setOnHiding(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                stopScreenMonitoring();
+            }
+        });
 
-		fileName = fileName.replace(" ", "");
+        this.stage = stage;
+        this.scene = scene;
+    }
 
-		File snapshotFile = new File(snapshotsFolder,
-				fileName);
+    private void stopScreenMonitoring() {
+        Logger.d("Stop screen monitoring " + this);
+        work = false;
+    }
 
-		Path source = Paths.get(getTempSnapshotSaved().getAbsolutePath());
-		Path destination = Paths.get(snapshotFile.getAbsolutePath());
+    @FXML
+    public void onSaveClicked(ActionEvent actionEvent) {
+        String fileName = Model.instance.getSelectedDevice().getName() + " " +
+                Model.instance.getSelectedDevice().getAndroidVersion() + " " +
+                DateUtil.getCurrentTimeStamp() + ".png";
 
-		try {
-			Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
-			labelLog.setText("Snapshot saved");
-			labelLog.setTextFill(Color.GREEN);
+        fileName = fileName.replace(" ", "");
 
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+        File snapshotFile = new File(snapshotsFolder,
+                fileName);
 
-	}
+        Path source = Paths.get(getTempSnapshotSaved().getAbsolutePath());
+        Path destination = Paths.get(snapshotFile.getAbsolutePath());
 
-	private void startScreenMonitoring() {
-		Logger.d("Start screen monitoring " + this);
-		work = true;
-		executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				while (work) {
-					String tempPicture = "/sdcard/temp.png";
-					Logger.d("Taking snapshot " + tempPicture);
+        try {
+            Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+            labelLog.setText("Snapshot saved");
+            labelLog.setTextFill(Color.GREEN);
 
-					String result = AdbUtils.run("shell screencap -p " + tempPicture);
-					if (!result.equals("")) {
-						Logger.e("Error taking snapshot: " + result);
-						return;
-					}
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-					File snapshotFile = getTempSnapshotToSave();
+    }
 
-					if (ADBHelper.pull(tempPicture, snapshotFile.getAbsolutePath())) {
-						Logger.d("Created snapshot: " + snapshotFile.getAbsolutePath());
-					}
+    private void startScreenMonitoring() {
+        Logger.d("Start screen monitoring " + this);
+        work = true;
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                while (work) {
+                    String tempPicture = "/sdcard/temp.png";
+                    Logger.d("Taking snapshot " + tempPicture);
 
-					ADBHelper.rm(tempPicture);
+                    String result = Executor.run(AdbHelper.composeAdbCommand("shell screencap -p " + tempPicture));
+                    if (!result.equals("")) {
+                        Logger.e("Error taking snapshot: " + result);
+                        return;
+                    }
 
-					int temp = saving;
-					saving = saved;
-					saved = temp;
+                    File snapshotFile = getTempSnapshotToSave();
 
-					Platform.runLater(new Runnable() {
-						@Override
-						public void run() {
-							updatePicture();
-						}
-					});
+                    if (AdbHelper.pull(tempPicture, snapshotFile.getAbsolutePath())) {
+                        Logger.d("Created snapshot: " + snapshotFile.getAbsolutePath());
+                    }
 
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException e) {
-					}
-				}
-			}
-		});
-	}
+                    AdbHelper.rm(tempPicture);
 
-	public void onOpenFolderClicked(ActionEvent actionEvent) {
-		if (Desktop.isDesktopSupported()) {
-			try {
-				Desktop.getDesktop().open(new File(Preferences.getInstance().getSnapshotFolder()));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+                    int temp = saving;
+                    saving = saved;
+                    saved = temp;
 
-	private File getTempSnapshotToSave() {
-		return new File(snapshotsFolder,
-				"temp" + saving + ".png");
-	}
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            updatePicture();
+                        }
+                    });
 
-	private File getTempSnapshotSaved() {
-		return new File(snapshotsFolder,
-				"temp" + saved + ".png");
-	}
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+        });
+    }
 
-	public static void showScreen(Class class1) throws IOException {
-		FXMLLoader fxmlLoader = new FXMLLoader(class1.getResource("/application/screencapture/ScreenCaptureLayout.fxml"));
+    public void onOpenFolderClicked(ActionEvent actionEvent) {
+        if (Desktop.isDesktopSupported()) {
+            try {
+                Desktop.getDesktop().open(new File(Preferences.getInstance().getSnapshotFolder()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-		Parent root1 = (Parent) fxmlLoader.load();
+    private File getTempSnapshotToSave() {
+        return new File(snapshotsFolder,
+                "temp" + saving + ".png");
+    }
 
-		ScreenCaptureController controller = fxmlLoader.<ScreenCaptureController>getController();
+    private File getTempSnapshotSaved() {
+        return new File(snapshotsFolder,
+                "temp" + saved + ".png");
+    }
 
-		Stage stage = new Stage();
-		stage.setMinHeight(560);
-		stage.setMinWidth(300);
+    public static void showScreen(Class class1) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(class1.getResource("/application/screencapture/ScreenCaptureLayout.fxml"));
 
-		stage.setHeight(560);
-		stage.setWidth(300);
-		stage.setTitle("Screen Capture");
-		Scene scene = new Scene(root1);
-		stage.setScene(scene);
-		stage.show();
+        Parent root1 = (Parent) fxmlLoader.load();
 
-		controller.setStage(stage, scene);
-	}
+        ScreenCaptureController controller = fxmlLoader.<ScreenCaptureController>getController();
+
+        Stage stage = new Stage();
+        stage.setMinHeight(560);
+        stage.setMinWidth(300);
+
+        stage.setHeight(560);
+        stage.setWidth(300);
+        stage.setTitle("Screen Capture");
+        Scene scene = new Scene(root1);
+        stage.setScene(scene);
+        stage.show();
+
+        controller.setStage(stage, scene);
+    }
 }

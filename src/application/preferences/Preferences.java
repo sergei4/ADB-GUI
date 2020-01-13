@@ -1,16 +1,15 @@
 package application.preferences;
 
-import application.AdbInstallLocationProvider;
-import application.DateUtil;
-import application.FileUtils;
 import application.log.Logger;
+import application.utils.DateUtil;
+import application.utils.FileUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 import java.io.File;
 import java.io.IOException;
 
-public class Preferences implements AdbInstallLocationProvider {
+public class Preferences {
 
     public static final String OS = System.getProperty("os.name").toLowerCase();
     private static Preferences instance;
@@ -84,24 +83,6 @@ public class Preferences implements AdbInstallLocationProvider {
         return instance;
     }
 
-    public String getAdbInstallLocatoin() {
-        String installedLocation = preferenceObj.adbPath;
-
-        if (installedLocation != null) {
-
-            // we will adjust the adb command ourselves
-            if (installedLocation.endsWith(File.separator + "adb")) {
-                installedLocation = installedLocation.substring(0, installedLocation.lastIndexOf(File.separator));
-            }
-
-            if (installedLocation.trim().length() > 0 && !installedLocation.endsWith(File.separator)) {
-                installedLocation += File.separator;
-            }
-        }
-
-        return installedLocation;
-    }
-
     public File getLogFile() {
         File logFolder = appLogsFolder;
         if (!logFolder.exists()) {
@@ -150,7 +131,7 @@ public class Preferences implements AdbInstallLocationProvider {
     }
 
     static class PreferenceObj {
-        String adbPath = "";
+        String platformToolsPath = "";
         boolean firstRun = true;
         public String apksFolders = "";
         public String obfuscationToolPath;
@@ -159,8 +140,8 @@ public class Preferences implements AdbInstallLocationProvider {
         public boolean windowIsAlwaysOn;
     }
 
-    public void setAdbPath(String adbPath) {
-        preferenceObj.adbPath = adbPath;
+    public void setPlatformToolsPath(String platformToolsPath) {
+        preferenceObj.platformToolsPath = platformToolsPath;
     }
 
     public void save() throws IOException {
@@ -169,8 +150,8 @@ public class Preferences implements AdbInstallLocationProvider {
         FileUtils.writeToFile(preferenceFile.getPath(), gson.toJson(preferenceObj));
     }
 
-    public String getAdbPath() {
-        return preferenceObj.adbPath;
+    public String getPlatformToolsPath() {
+        return preferenceObj.platformToolsPath;
     }
 
     public boolean isFirstRun() {

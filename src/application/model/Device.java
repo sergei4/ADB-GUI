@@ -89,7 +89,7 @@ public class Device {
 			if (!availbleApplications.contains(application)){
 				availbleApplications.add(application);
 				changed = true;
-				//Logger.d("Device Add " + application.getApplicationName());
+				//Logger.d("MobileDevice Add " + application.getApplicationName());
 			} else {
 				int index = availbleApplications.indexOf(application);
 				Application availbleApplication = availbleApplications.get(index);
@@ -97,7 +97,7 @@ public class Device {
 				if (!availbleApplication.isHasSameValues(application)){
 					availbleApplications.remove(index);
 					availbleApplications.add(index, application);
-					//Logger.d("Device Change " + application.getApplicationName());
+					//Logger.d("MobileDevice Change " + application.getApplicationName());
 
 					changed = true;
 				}
@@ -110,7 +110,7 @@ public class Device {
 												// call i.remove()
 
 			if (!foundApplications.contains(applicationExisting)) {
-				//Logger.d("Device Remove " + applicationExisting.getApplicationName());
+				//Logger.d("MobileDevice Remove " + applicationExisting.getApplicationName());
 
 				// not exists
 				i.remove();

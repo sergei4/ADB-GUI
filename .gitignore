@@ -1,6 +1,6 @@
 .idea/
 .gradle/
-
+.DS_Store
 
 appData/
 

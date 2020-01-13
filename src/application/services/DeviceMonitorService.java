@@ -1,9 +1,9 @@
 package application.services;
 
-import application.AdbUtils;
 import application.log.Logger;
 import application.model.Device;
 import application.model.Model;
+import dx.helpers.AdbHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,7 @@ public class DeviceMonitorService {
             while (working) {
                 //Logger.d("run devices");
 
-                String result = AdbUtils.run("devices -l");
+                String result = AdbHelper.deviceList();
                 String[] split = result.split("\n");
                 //Logger.d("devices: " + result);
 
@@ -55,7 +55,7 @@ public class DeviceMonitorService {
                     String line = split[i];
                     if (line.contains("device product")) {
                         String[] deviceDescriptionSplit = line.split("\\s+");
-                        String model = "Device";
+                        String model = "MobileDevice";
                         for (String descriptionTemp : deviceDescriptionSplit) {
                             if (descriptionTemp.contains("model:")) {
                                 model = descriptionTemp.split("model:")[1];

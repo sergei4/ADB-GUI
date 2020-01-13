@@ -1,17 +1,17 @@
 package application.preferences;
 
-import java.awt.*;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.util.ResourceBundle;
-
-import application.Main;
+import dx.Main;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+
+import java.awt.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.util.ResourceBundle;
 
 public class PreferenceController implements Initializable{
 
@@ -32,7 +32,7 @@ public class PreferenceController implements Initializable{
 
     @FXML
     private void handleSaveButtonAction(ActionEvent event) {
-    	//Preferences.getInstance().setAdbPath(textFieldAdbPath.getText());
+    	//Preferences.getInstance().setPlatformToolsPath(textFieldAdbPath.getText());
     	Preferences.getInstance().setAPKsFoldersPlain(textFieldAPKsFolders.getText());
     	Preferences.getInstance().setObfuscationToolPath(textFieldObfuscatioinToolPath.getText());
     	try {
@@ -44,7 +44,7 @@ public class PreferenceController implements Initializable{
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		//textFieldAdbPath.setText(Preferences.getInstance().getAdbPath());
+		//textFieldAdbPath.setText(Preferences.getInstance().getPlatformToolsPath());
 		textFieldAPKsFolders.setText(Preferences.getInstance().getAPKsFoldersPlain());
 		textFieldObfuscatioinToolPath.setText(Preferences.getInstance().getObfuscationToolPath());
 

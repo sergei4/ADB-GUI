@@ -1,12 +1,15 @@
 package dx.ui.screencapture;
 
-import application.ADBHelper;
-import application.AdbUtils;
-import application.FileUtils;
-import application.FolderUtil;
 import application.log.Logger;
 import application.preferences.Preferences;
-import dx.model.Device;
+import application.utils.FileUtils;
+import application.utils.FolderUtil;
+import dx.helpers.AdbHelper;
+import dx.helpers.IosHelper;
+import dx.model.MobileDevice;
+import dx.model.MobileDeviceVisitor;
+import dx.model.android.AndroidDevice;
+import dx.model.ios.IphoneDevice;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
@@ -46,10 +49,10 @@ public class ScreenCaptureController implements Initializable {
 
     private DeviceSnapshot deviceSnapshot;
 
-    private Supplier<Device> deviceSupplier = () -> null;
+    private Supplier<MobileDevice> deviceSupplier = () -> null;
 
     private static class DeviceSnapshot {
-        Device device;
+        MobileDevice device;
         Image image;
     }
 
@@ -61,11 +64,11 @@ public class ScreenCaptureController implements Initializable {
         }
     }
 
-    public void setDeviceSupplier(Supplier<Device> supplier) {
+    public void setDeviceSupplier(Supplier<MobileDevice> supplier) {
         deviceSupplier = supplier;
     }
 
-    private void updatePicture(Device device) {
+    private void updatePicture(MobileDevice device) {
         File file = getTempSnapshotFile();
         if (file.exists()) {
             deviceSnapshot = new DeviceSnapshot();
@@ -90,29 +93,47 @@ public class ScreenCaptureController implements Initializable {
     @FXML
     public void onCreateSnapshotClicked(ActionEvent actionEvent) {
         new Thread(() -> {
-            String tempPicture = "/sdcard/temp.png";
-            Device currentDevice = deviceSupplier.get();
+            MobileDevice currentDevice = deviceSupplier.get();
             if (currentDevice != null && currentDevice.isConnected()) {
-                Logger.d("Taking snapshot " + tempPicture);
+                currentDevice.visitBy(new MobileDeviceVisitor() {
+                    @Override
+                    public void visitBy(AndroidDevice device) {
+                        String tempPicture = "/sdcard/temp.png";
+                        Logger.d("Taking android device snapshot " + tempPicture);
 
-                String result = AdbUtils.run(currentDevice.getId(), "adb shell screencap -p " + tempPicture);
-                if (!result.equals("")) {
-                    Logger.e("Error taking snapshot: " + result);
-                    return;
-                }
+                        String result = AdbHelper.createScreenshot(currentDevice.getId(), tempPicture);
+                        if (!result.equals("")) {
+                            Logger.e("Error taking snapshot: " + result);
+                            return;
+                        }
 
-                File snapshotFile = getTempSnapshotFile();
-                if (snapshotFile.exists()) {
-                    snapshotFile.delete();
-                }
+                        File snapshotFile = getTempSnapshotFile();
+                        if (snapshotFile.exists()) {
+                            snapshotFile.delete();
+                        }
 
-                if (ADBHelper.pull(currentDevice.getId(), tempPicture, snapshotFile.getAbsolutePath())) {
-                    Logger.d("Created snapshot: " + snapshotFile.getAbsolutePath());
-                }
+                        if (AdbHelper.pull(currentDevice.getId(), tempPicture, snapshotFile.getAbsolutePath())) {
+                            Logger.d("Created snapshot: " + snapshotFile.getAbsolutePath());
+                        }
 
-                ADBHelper.rm(currentDevice.getId(), tempPicture);
+                        AdbHelper.rm(currentDevice.getId(), tempPicture);
+                        Platform.runLater(() -> updatePicture(currentDevice));
+                    }
 
-                Platform.runLater(() -> updatePicture(currentDevice));
+                    @Override
+                    public void visitBy(IphoneDevice device) {
+                        File snapshotFile = getTempSnapshotFile();
+                        if (snapshotFile.exists()) {
+                            snapshotFile.delete();
+                        }
+                        String result = IosHelper.createScreenshot(currentDevice.getId(), snapshotFile.getAbsolutePath());
+                        if (!result.equals("")) {
+                            Logger.e("Error taking snapshot: " + result);
+                            return;
+                        }
+                        Platform.runLater(() -> updatePicture(currentDevice));
+                    }
+                });
             }
         }).start();
     }

@@ -1,25 +1,26 @@
 package dx;
 
-import application.AdbUtils;
-import application.FolderUtil;
 import application.WindowController;
 import application.log.Logger;
 import application.preferences.Preferences;
 import application.startupcheck.StartupCheckController;
-import dx.model.Device;
+import application.utils.FolderUtil;
+import dx.helpers.AdbHelper;
+import dx.model.MobileDevice;
 import dx.ui.devices.DevicesController;
-import dx.ui.logcat.LogcatController;
-import dx.ui.logcat.LogcatUtils;
+import dx.ui.logcat.DeviceLogController;
+import dx.ui.logcat.MobileLogUtils;
 import dx.ui.progress.ProgressDialogController;
 import dx.ui.screencapture.ScreenCaptureController;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.*;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
@@ -47,7 +48,7 @@ public class FXMLMainController implements WindowController, Initializable {
     private DevicesController devicesController;
 
     @FXML
-    private LogcatController logcatController;
+    private DeviceLogController deviceLogController;
 
     @FXML
     private ScreenCaptureController screenshotController;
@@ -56,7 +57,7 @@ public class FXMLMainController implements WindowController, Initializable {
     private Pane menuPane;
 
     @FXML
-    private Pane logcat;
+    private Pane deviceLog;
 
     @FXML
     private Pane screenshot;
@@ -82,8 +83,8 @@ public class FXMLMainController implements WindowController, Initializable {
         //init controllers
         screenshotController.setDeviceSupplier(() -> devicesController.getSelectedDevice());
 
-        logcatController.setDeviceSupplier(() -> devicesController.getSelectedDevice());
-        devicesController.addListener(logcatController.getDeviceControllerListener());
+        deviceLogController.setDeviceSupplier(() -> devicesController.getSelectedDevice());
+        devicesController.addListener(deviceLogController.getDeviceControllerListener());
 
         //init menu
         MenuBar menuBar = new MenuBar();
@@ -103,7 +104,7 @@ public class FXMLMainController implements WindowController, Initializable {
         menuPane.getChildren().add(menuBar);
 
         screenshot.visibleProperty().bind(btnOpenScreenShotScreen.selectedProperty());
-        logcat.visibleProperty().bind(btnOpenLogScreen.selectedProperty());
+        deviceLog.visibleProperty().bind(btnOpenLogScreen.selectedProperty());
 
         appLogText.setText("");
 
@@ -124,7 +125,7 @@ public class FXMLMainController implements WindowController, Initializable {
             }
         });
 
-        openADBValidator();
+        //openADBValidator();
     }
 
     private void setWindowOnTop(boolean b) {
@@ -175,20 +176,20 @@ public class FXMLMainController implements WindowController, Initializable {
 
     @FXML
     public void onSaveLogFolderClicked(ActionEvent actionEvent) throws Exception {
-        Device currentDevice = devicesController.getSelectedDevice();
+        MobileDevice currentDevice = devicesController.getSelectedDevice();
         if (currentDevice != null && currentDevice.isConnected()) {
             Stage dialog = ProgressDialogController.createDialog("Gathering information. Please wait...");
             dialog.initStyle(StageStyle.UNDECORATED);
             FXMLMainController.showDialog(dialog);
-            LogcatUtils.save(currentDevice, currentDevice.observeFullDeviceLog(), () -> Platform.runLater(dialog::close));
+            MobileLogUtils.save(currentDevice, currentDevice.observeFullDeviceLog(), () -> Platform.runLater(dialog::close));
         }
     }
 
     @FXML
     public void onOpenLangSettingsClicked(ActionEvent actionEvent) {
-        Device currentDevice = devicesController.getSelectedDevice();
+        MobileDevice currentDevice = devicesController.getSelectedDevice();
         if (currentDevice != null && currentDevice.isConnected()) {
-            AdbUtils.run(currentDevice.getId(), "adb shell am start -n com.android.settings/.LanguageSettings");
+            AdbHelper.openLangSettings(currentDevice.getId());
         }
     }
 

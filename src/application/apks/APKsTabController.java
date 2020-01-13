@@ -1,15 +1,12 @@
 package application.apks;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.ResourceBundle;
-import java.util.Set;
-
-import application.*;
+import application.AdbUtils;
+import application.ProcessUtils;
 import application.log.Logger;
 import application.preferences.Preferences;
+import application.utils.DialogUtil;
+import application.utils.FileUtils;
+import dx.helpers.AdbHelper;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -20,6 +17,13 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.ResourceBundle;
+import java.util.Set;
 
 public class APKsTabController implements Initializable {
 
@@ -56,11 +60,11 @@ public class APKsTabController implements Initializable {
                 public void run() {
                     Set<String> packages = null;
                     if (checkBoxOpenAfterInstall.isSelected()) {
-                        packages = ADBHelper.getPackages();
+                        packages = AdbHelper.getPackages();
                     }
 
                     Logger.ds("Trying to install: " + selectedApk);
-                    String result = ADBHelper.install(selectedApk);
+                    String result = AdbHelper.install(selectedApk);
 
                     if (result != null) {
                         Logger.es(result);
@@ -70,13 +74,13 @@ public class APKsTabController implements Initializable {
 
                         if (packages != null) {
                             boolean found = false;
-                            Set<String> newPackages = ADBHelper.getPackages();
+                            Set<String> newPackages = AdbHelper.getPackages();
 
                             for (String packageNew : newPackages) {
                                 if (!packages.contains(packageNew)) {
                                     found = true;
                                     Logger.ds("Found new pakcage: " + packageNew);
-                                    ADBHelper.openApp(packageNew);
+                                    AdbHelper.openApp(packageNew);
                                     Logger.ds("Opened package: " + packageNew);
                                     break;
                                 }

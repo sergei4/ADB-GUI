@@ -1,10 +1,11 @@
 package application.model;
 
-import application.AdbUtils;
-import application.FileUtils;
 import application.log.Logger;
 import application.preferences.Preferences;
+import application.utils.FileUtils;
 import com.google.gson.Gson;
+import dx.Executor;
+import dx.helpers.AdbHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -88,7 +89,7 @@ public class Model {
             ModelListener.notify(selectedDeviceListeners);
         }
         if (changed) {
-            Logger.d("Device change detected");
+            Logger.d("MobileDevice change detected");
             notifyListeners();
         }
     }
@@ -103,7 +104,7 @@ public class Model {
         } else {
             deviceFaund.setName(deviceFaund.getModel());
         }
-        String[] split = AdbUtils.run(id, "shell getprop ro.build.version.release").split("\n");
+        String[] split = Executor.run(AdbHelper.composeAdbCommand(id, "shell getprop ro.build.version.release")).split("\n");
 
         if (split.length > 0) {
             deviceFaund.setAndroidVersion(split[0]);

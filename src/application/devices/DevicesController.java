@@ -1,21 +1,18 @@
 package application.devices;
 
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Paths;
-import java.util.Calendar;
-import java.util.List;
-import java.util.ResourceBundle;
-
-import application.ADBHelper;
 import application.AdbUtils;
-import application.DialogUtil;
 import application.intentbroadcasts.IntentBroadcast;
-import application.model.*;
+import application.log.Logger;
+import application.model.Command;
+import application.model.CommandBatch;
+import application.model.Device;
+import application.model.Model;
+import application.model.ModelListener;
 import application.screencapture.ScreenCaptureController;
+import application.services.DeviceMonitorService;
+import application.utils.DialogUtil;
 import application.view.DateTimePickerController;
+import dx.helpers.AdbHelper;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -27,9 +24,13 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ListView;
-import application.log.Logger;
-import application.services.DeviceMonitorService;
 import javafx.scene.control.TextField;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Calendar;
+import java.util.List;
+import java.util.ResourceBundle;
 
 public class DevicesController implements Initializable {
 
@@ -96,11 +97,12 @@ public class DevicesController implements Initializable {
                     public void run() {
                         for (Command command : commandBatch.commands) {
                             Logger.ds("Run: " + command.description);
-                            AdbUtils.run(command);
+                            dx.Executor.run(AdbHelper.composeAdbCommand(command.command));
                         }
 
                         Platform.runLater(new Runnable() {
-                            @Override public void run() {
+                            @Override
+                            public void run() {
                                 choiceBoxBatchCommands.setDisable(false);
 
                                 choiceBoxBatchCommands.getSelectionModel().select(0);
@@ -143,7 +145,7 @@ public class DevicesController implements Initializable {
 
                 @Override
                 public void run() {
-                    Logger.d(ADBHelper.killServer());
+                    Logger.d(AdbHelper.killServer());
                     Logger.fs("ADB server killed");
                 }
             });
@@ -179,7 +181,7 @@ public class DevicesController implements Initializable {
         for (Device device : availableDevices) {
             devicesListItems.add(getDeviceDescription(device));
 
-            if (selectedDevice != null && device.getId().equals(selectedDevice.getId())){
+            if (selectedDevice != null && device.getId().equals(selectedDevice.getId())) {
                 listDevices.getSelectionModel().select(i);
                 setSelected = true;
             }
@@ -202,7 +204,7 @@ public class DevicesController implements Initializable {
             public void run() {
                 Logger.ds("Sending input to device: " + textFieldDeviceInput.getText());
 
-                ADBHelper.sendInputText(textFieldDeviceInput.getText());
+                AdbHelper.sendInputText(textFieldDeviceInput.getText());
                 Logger.fs("Text sent: " + textFieldDeviceInput.getText());
                 textFieldDeviceInput.setText("");
             }
@@ -218,7 +220,7 @@ public class DevicesController implements Initializable {
 
                 if (selectedDevice != null) {
                     Logger.ds("Connecting device to wifi: " + getDeviceDescription(selectedDevice));
-                    Logger.fes(ADBHelper.connectDeviceToWifi(), "Device connected, you can disconnect it from the usb port");
+                    Logger.fes(AdbHelper.connectDeviceToWifi(), "MobileDevice connected, you can disconnect it from the usb port");
 
                 } else {
                     DialogUtil.showErrorDialog("Please select device first");
@@ -242,7 +244,7 @@ public class DevicesController implements Initializable {
                         AdbUtils.executor.execute(new Runnable() {
                             @Override
                             public void run() {
-                                String result = ADBHelper.setDateTime(calendar);
+                                String result = AdbHelper.setDateTime(calendar);
                                 Logger.fes(result, "Date/Time set: " + calendar.getTime());
                             }
                         });
@@ -261,7 +263,7 @@ public class DevicesController implements Initializable {
                 IntentBroadcast intent = new IntentBroadcast();
                 intent.activityManagerCommand = IntentBroadcast.ACTIVITY_MANAGER_COMMAND_START;
                 intent.action = "android.settings.APPLICATION_DEVELOPMENT_SETTINGS";
-                ADBHelper.sendIntent(intent);
+                AdbHelper.sendIntent(intent);
             }
         });
     }

@@ -1,21 +1,22 @@
 package application.intentbroadcasts;
 
-import application.ADBHelper;
 import application.AdbUtils;
-import application.DialogUtil;
-import application.FileUtils;
 import application.log.Logger;
-import application.model.CommandBatch;
 import application.preferences.Preferences;
+import application.utils.DialogUtil;
+import application.utils.FileUtils;
 import com.google.gson.Gson;
+import dx.helpers.AdbHelper;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
-import javafx.scene.control.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ListView;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 
 import java.io.File;
@@ -25,8 +26,6 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-
-import static com.sun.activation.registries.LogSupport.log;
 
 public class IntentBroadcastsController implements Initializable {
 
@@ -130,7 +129,7 @@ public class IntentBroadcastsController implements Initializable {
                 IntentBroadcast intentBroadcast = getFilledIntent();
                 Logger.ds("Sending Intent: " + intentBroadcast);
 
-                String result = ADBHelper.sendIntent(intentBroadcast);
+                String result = AdbHelper.sendIntent(intentBroadcast);
                 Logger.fes(result, "Intent Sent");
                 return null;
             }

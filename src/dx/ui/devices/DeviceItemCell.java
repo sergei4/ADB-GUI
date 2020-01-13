@@ -1,15 +1,15 @@
 package dx.ui.devices;
 
-import dx.model.Device;
+import dx.model.MobileDevice;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ListCell;
 
-public class DeviceItemCell extends ListCell<Device> {
+public class DeviceItemCell extends ListCell<MobileDevice> {
 
     private FXMLLoader loader;
 
     @Override
-    protected void updateItem(Device device, boolean empty) {
+    protected void updateItem(MobileDevice device, boolean empty) {
         super.updateItem(device, empty);
         if (empty || device == null) {
             setText(null);
@@ -20,7 +20,7 @@ public class DeviceItemCell extends ListCell<Device> {
         }
     }
 
-    private String getDeviceDescription(Device device) {
-        return (device.isConnected() ? "+" : "-") + device.getModel() + ": " + device.getAndroidApiName() + " (" + device.getId() + ")";
+    private String getDeviceDescription(MobileDevice device) {
+        return (device.isConnected() ? "+" : "-") + device.getModel() + ": " + device.getOsVersion() + " (" + device.getId() + ")";
     }
 }

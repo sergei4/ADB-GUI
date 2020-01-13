@@ -1,13 +1,17 @@
 package application.applications;
 
-import java.io.File;
-import java.net.URL;
-import java.util.*;
-
-import application.ADBHelper;
 import application.AdbUtils;
-import application.DialogUtil;
-import application.FolderUtil;
+import application.log.Logger;
+import application.model.Application;
+import application.model.Device;
+import application.model.Model;
+import application.model.ModelListener;
+import application.model.PackageProcess;
+import application.services.ApplicationsMonitorService;
+import application.utils.DialogUtil;
+import application.utils.FolderUtil;
+import dx.Executor;
+import dx.helpers.AdbHelper;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -18,14 +22,15 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import application.log.Logger;
-import application.model.Application;
-import application.model.Device;
-import application.model.Model;
-import application.model.ModelListener;
-import application.model.PackageProcess;
-import application.services.ApplicationsMonitorService;
 import javafx.scene.control.TextInputDialog;
+
+import java.io.File;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
 public class ApplicationsTabController implements Initializable {
 
@@ -125,7 +130,7 @@ public class ApplicationsTabController implements Initializable {
 				@Override
 				public void run() {
 					Logger.ds("Open: " + getSelectedApplication().getApplicationName());
-					String result = ADBHelper.openApp(getGetSelectedAppPackage());
+					String result = AdbHelper.openApp(getGetSelectedAppPackage());
 					if (result == null){
 						Logger.fs("Opened: " + getSelectedApplication().getApplicationName());
 					} else {
@@ -144,7 +149,7 @@ public class ApplicationsTabController implements Initializable {
 				public void run() {
 					String selectedPackage = getGetSelectedAppPackage();
 					Logger.ds("Uninstaling: " + selectedPackage);
-					String result = AdbUtils.run("uninstall " + selectedPackage);
+					String result = Executor.run(AdbHelper.composeAdbCommand("uninstall " + selectedPackage));
 
 					if (result.trim().equals("Success")){
 						Logger.fs("Uninstalled: " + selectedPackage);
@@ -164,7 +169,7 @@ public class ApplicationsTabController implements Initializable {
 			AdbUtils.executor.execute(new Runnable() {
 				@Override
 				public void run() {
-					String result = ADBHelper.clearData(getGetSelectedAppPackage());
+					String result = AdbHelper.clearData(getGetSelectedAppPackage());
 					if (result == null){
 						Logger.fs("Cleared data: " + getGetSelectedAppPackage());
 					} else {
@@ -195,7 +200,7 @@ public class ApplicationsTabController implements Initializable {
 				AdbUtils.executor.execute(new Runnable() {
 					@Override
 					public void run() {
-						String result = ADBHelper.kill(application.getPackageName(), packageProcess.PID);
+						String result = AdbHelper.kill(application.getPackageName(), packageProcess.PID);
 						if (result == null){
 							Logger.fs("Killed: " + application.getPackageName());
 						} else {
@@ -218,7 +223,7 @@ public class ApplicationsTabController implements Initializable {
 				@Override
 				public void run() {
 					Logger.ds("Getting apk path for: " + application.getApplicationName());
-					String path = AdbUtils.run("shell pm path " + application.getPackageName());
+					String path = Executor.run(AdbHelper.composeAdbCommand("shell pm path " + application.getPackageName()));
 
 					if (!path.startsWith("package:")){
 						Logger.es("Error getting path for apk: " + application.getApplicationName() + ": " + path);
@@ -232,7 +237,7 @@ public class ApplicationsTabController implements Initializable {
 
 					Logger.ds("Copy: " + from + " to: " + tempApkFile);
 
-					String result = AdbUtils.run("shell cp " + from + " " + tempApkFile);
+					String result = Executor.run(AdbHelper.composeAdbCommand("shell cp " + from + " " + tempApkFile));
 					if (!result.trim().equals("")){
 						Logger.es("Error copying: " + from + " to: " + tempApkFile);
 						return;
@@ -241,13 +246,13 @@ public class ApplicationsTabController implements Initializable {
 					File apkToCreate = new File(apkFolder.getAbsolutePath(), application.getPackageName() + ".apk");
 					Logger.ds("pulling: " + from + " to: " + apkToCreate.getAbsolutePath());
 
-					if (ADBHelper.pull(tempApkFile, apkToCreate.getAbsolutePath())){
+					if (AdbHelper.pull(tempApkFile, apkToCreate.getAbsolutePath())){
 						Logger.fs("File pulled to: " + apkToCreate.getAbsolutePath());
 					} else {
 						Logger.es("Error pulling: " + result);
 					}
 
-					result = ADBHelper.rm(tempApkFile);
+					result = AdbHelper.rm(tempApkFile);
 				}
 			});
 		}
@@ -349,7 +354,7 @@ public class ApplicationsTabController implements Initializable {
 
 							Logger.ds("Running monkey of: " + application.getApplicationName() + " steps: " + numberOfSteps);
 
-							String result = ADBHelper.runMonkey(application.getApplicationName(), numberOfSteps, 100);
+							String result = AdbHelper.runMonkey(application.getApplicationName(), numberOfSteps, 100);
 
 							if (result == null){
 								Logger.fs("Monkey Finished: " + application.getApplicationName());

@@ -1,18 +1,18 @@
 package application.services;
 
+import application.log.Logger;
+import application.model.Application;
+import application.model.Device;
+import application.model.Model;
+import application.model.PackageProcess;
+import dx.helpers.AdbHelper;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import application.AdbUtils;
-import application.log.Logger;
-import application.model.Application;
-import application.model.Device;
-import application.model.Model;
-import application.model.PackageProcess;
 
 public class ApplicationsMonitorService {
 
@@ -52,7 +52,7 @@ public class ApplicationsMonitorService {
 
                     Map<String, ArrayList<PackageProcess>> packageProcesses = getRunningProcesses();
 
-                    String result = AdbUtils.run("shell pm list packages");
+                    String result = dx.Executor.run(AdbHelper.composeAdbCommand("shell pm list packages"));
 
                     String[] split = result.split("\n");
 
@@ -106,7 +106,7 @@ public class ApplicationsMonitorService {
 
     protected Map<String, ArrayList<PackageProcess>> getRunningProcesses() {
         Map<String, ArrayList<PackageProcess>> map = new HashMap<>();
-        String result = AdbUtils.run("shell ps");
+        String result = dx.Executor.run(AdbHelper.composeAdbCommand("shell ps"));
         String[] split = result.split("\n");
         for (int i = 1; i < split.length; i++) {
 

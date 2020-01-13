@@ -1,10 +1,15 @@
 package dx.ui.devices;
 
-import application.ADBHelper;
 import application.log.Logger;
-import dx.model.Device;
-import dx.model.DeviceRegistry;
-import dx.service.DeviceMonitorService;
+import dx.helpers.AdbHelper;
+import dx.helpers.IosHelper;
+import dx.model.MobileDevice;
+import dx.model.MobileDeviceRegistry;
+import dx.model.MobileDeviceVisitor;
+import dx.model.android.AndroidDevice;
+import dx.model.ios.IphoneDevice;
+import dx.service.AndroidDeviceMonitorService;
+import dx.service.IphoneDeviceMonitorService;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -32,13 +37,13 @@ import java.util.regex.Pattern;
 public class DevicesController implements Initializable {
 
     public interface Listener {
-        void onDeviceChanged(Device device);
+        void onDeviceChanged(MobileDevice device);
     }
 
     private List<Listener> listeners = new ArrayList<>();
 
     @FXML
-    private ListView<Device> listDevices;
+    private ListView<MobileDevice> listDevices;
 
     @FXML
     private Button buttonADBToggle;
@@ -46,36 +51,42 @@ public class DevicesController implements Initializable {
     @FXML
     private Pane devicePane;
 
-    private ObservableList<Device> devicesListItems = FXCollections.observableArrayList();
+    private ObservableList<MobileDevice> devicesListItems = FXCollections.observableArrayList();
 
-    private DeviceRegistry deviceRegistry;
+    private MobileDeviceRegistry mobileDeviceRegistry;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         listDevices.setItems(devicesListItems);
         listDevices.setCellFactory(listView -> new DeviceItemCell());
 
-        listDevices.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Device>() {
+        listDevices.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<MobileDevice>() {
             @Override
-            public void changed(ObservableValue<? extends Device> observable, Device oldValue, Device newValue) {
+            public void changed(ObservableValue<? extends MobileDevice> observable, MobileDevice oldValue, MobileDevice newValue) {
                 for (Listener l : listeners) {
                     l.onDeviceChanged(newValue);
                 }
             }
         });
 
-        deviceRegistry = new DeviceRegistry(DeviceMonitorService.instance);
+        mobileDeviceRegistry = new MobileDeviceRegistry(
+                AndroidDeviceMonitorService.instance,
+                IphoneDeviceMonitorService.instance
+        );
 
-        deviceRegistry.observeDeviceList()
+        mobileDeviceRegistry.observeDeviceList()
                 .observeOn(JavaFxScheduler.platform())
                 .flatMapIterable(d -> d)
                 .doOnNext(this::updDevice)
                 .subscribe();
 
         cfgDragAndDropEvent();
+
+        AndroidDeviceMonitorService.instance.start();
+        IphoneDeviceMonitorService.instance.start();
     }
 
-    public Device getSelectedDevice() {
+    public MobileDevice getSelectedDevice() {
         return listDevices.getSelectionModel().getSelectedItem();
     }
 
@@ -91,12 +102,11 @@ public class DevicesController implements Initializable {
         }
     }
 
-    private void updDevice(Device device) {
+    private void updDevice(MobileDevice device) {
         int index = devicesListItems.indexOf(device);
         if (index == -1) {
             devicesListItems.add(device);
         } else {
-            //devicesListItems.set(index, device);
             listDevices.refresh();
         }
         if (listDevices.getSelectionModel().getSelectedItem() == null) {
@@ -122,30 +132,63 @@ public class DevicesController implements Initializable {
                 boolean success = false;
                 if (db.hasFiles()) {
                     File file = db.getFiles().get(0);
-                    new Thread(() -> {
-                        Device currentDevice = listDevices.getSelectionModel().getSelectedItem();
-                        if (currentDevice != null && currentDevice.isConnected()) {
-                            Logger.ds("Installing...");
-                            String result = ADBHelper.install(currentDevice.getId(), file.getAbsolutePath());
-                            if (result == null) {
-                                Logger.fs("Application has been installed successful");
-                            } else {
-                                Pattern causeRegExpr = Pattern.compile("Failure (.*)");
-                                Matcher matcher = causeRegExpr.matcher(result);
-                                String cause = "";
-                                if (matcher.find()) {
-                                    cause = matcher.group(1);
-                                }
-                                Logger.es("Failed installation: " + cause);
+                    MobileDevice currentDevice = listDevices.getSelectionModel().getSelectedItem();
+                    if (currentDevice != null && currentDevice.isConnected()) {
+                        currentDevice.visitBy(new MobileDeviceVisitor() {
+
+                            @Override
+                            public void visitBy(AndroidDevice device) {
+                                installApkFile(device.getId(), file.getAbsoluteFile());
                             }
-                        }
-                    }).start();
+
+                            @Override
+                            public void visitBy(IphoneDevice device) {
+                                installIpaFile(device.getId(), file.getAbsoluteFile());
+                            }
+                        });
+                    }
                     success = true;
                 }
                 event.setDropCompleted(success);
                 event.consume();
             }
         });
+    }
+
+    private void installApkFile(String deviceId, File apkFile) {
+        new Thread(() -> {
+            Logger.ds("Installing...");
+            String result = AdbHelper.install(deviceId, apkFile.getAbsolutePath());
+            if (result == null) {
+                Logger.fs("Application has been installed successful");
+            } else {
+                Pattern causeRegExpr = Pattern.compile("Failure (.*)");
+                Matcher matcher = causeRegExpr.matcher(result);
+                String cause = "";
+                if (matcher.find()) {
+                    cause = matcher.group(1);
+                }
+                Logger.es("Failed installation: " + cause);
+            }
+        }).start();
+    }
+
+    private void installIpaFile(String deviceId, File ipaFile) {
+        new Thread(() -> {
+            Logger.ds("Installing...");
+            String result = IosHelper.install(deviceId, ipaFile.getAbsolutePath());
+            if (result == null) {
+                Logger.fs("Application has been installed successful");
+            } else {
+                Pattern causeRegExpr = Pattern.compile("Failure (.*)");
+                Matcher matcher = causeRegExpr.matcher(result);
+                String cause = "";
+                if (matcher.find()) {
+                    cause = matcher.group(1);
+                }
+                Logger.es("Failed installation: " + cause);
+            }
+        }).start();
     }
 
     @FXML
